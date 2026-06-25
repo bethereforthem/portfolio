@@ -1,32 +1,44 @@
-import emailjs from '@emailjs/browser'
 import { useRef, useState } from 'react'
+import LocationMap from '../components/LocationMap'
 import Reveal from '../components/Reveal'
-import { emailjsConfig, profile } from '../data/profile'
+import { profile } from '../data/profile'
 
 export default function Contact() {
   const formRef = useRef(null)
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [status, setStatus] = useState('idle') // idle | sending | success | error
+  const [errorMessage, setErrorMessage] = useState('')
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    const form = formRef.current
+    setStatus('sending')
+    setErrorMessage('')
 
-    emailjs
-      .sendForm(emailjsConfig.serviceId, emailjsConfig.adminTemplateId, form, emailjsConfig.publicKey)
-      .then(() => {
-        emailjs
-          .sendForm(emailjsConfig.serviceId, emailjsConfig.userTemplateId, form, emailjsConfig.publicKey)
-          .then(() => {
-            setShowSuccess(true)
-            form.reset()
-          })
-          .catch((error) => {
-            alert('User confirmation failed. ' + JSON.stringify(error))
-          })
+    const form = formRef.current
+    const data = {
+      name: form.user_name.value.trim(),
+      email: form.user_email.value.trim(),
+      message: form.message.value.trim(),
+    }
+
+    try {
+      const response = await fetch('/.netlify/functions/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       })
-      .catch((error) => {
-        alert('Failed to send message. ' + JSON.stringify(error))
-      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Something went wrong.')
+      }
+
+      setStatus('success')
+      form.reset()
+    } catch (err) {
+      setStatus('error')
+      setErrorMessage(err.message || 'Failed to send message. Please try again.')
+    }
   }
 
   return (
@@ -38,58 +50,94 @@ export default function Contact() {
             <i className="fas fa-envelope-open-text text-blue-600"></i> Contact Us
           </h2>
 
-          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-gray-600 mb-2 font-semibold">
-                <i className="fas fa-user text-blue-500 mr-2"></i> Name
-              </label>
-              <input
-                type="text"
-                id="user_name"
-                name="user_name"
-                placeholder="Your Name"
-                required
-                className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-              />
+          {/* Success state */}
+          {status === 'success' ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                <i className="fas fa-check text-green-600 text-2xl"></i>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800">Message Sent!</h3>
+              <p className="text-gray-500 text-sm max-w-xs">
+                Thanks for reaching out. I'll get back to you as soon as possible.
+              </p>
+              <button
+                onClick={() => setStatus('idle')}
+                className="mt-2 text-blue-600 hover:text-blue-700 font-medium text-sm underline"
+              >
+                Send another message
+              </button>
             </div>
-            <div>
-              <label className="block text-gray-600 mb-2 font-semibold">
-                <i className="fas fa-envelope text-blue-500 mr-2"></i> Email
-              </label>
-              <input
-                type="email"
-                id="user_email"
-                name="user_email"
-                placeholder="Your Email"
-                required
-                className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-600 mb-2 font-semibold">
-                <i className="fas fa-comment-dots text-blue-500 mr-2"></i> Message
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                rows="5"
-                placeholder="Your Message"
-                required
-                className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-              ></textarea>
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition"
-            >
-              <i className="fas fa-paper-plane mr-2"></i> Send Message
-            </button>
-          </form>
+          ) : (
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-gray-600 mb-2 font-semibold">
+                  <i className="fas fa-user text-blue-500 mr-2"></i> Name
+                </label>
+                <input
+                  type="text"
+                  id="user_name"
+                  name="user_name"
+                  placeholder="Your Name"
+                  required
+                  disabled={status === 'sending'}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none disabled:opacity-60"
+                />
+              </div>
 
-          {showSuccess && (
-            <div className="mt-4 text-center font-semibold text-green-600">
-              Message sent successfully! Check your email for confirmation.
-            </div>
+              <div>
+                <label className="block text-gray-600 mb-2 font-semibold">
+                  <i className="fas fa-envelope text-blue-500 mr-2"></i> Email
+                </label>
+                <input
+                  type="email"
+                  id="user_email"
+                  name="user_email"
+                  placeholder="Your Email"
+                  required
+                  disabled={status === 'sending'}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none disabled:opacity-60"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-600 mb-2 font-semibold">
+                  <i className="fas fa-comment-dots text-blue-500 mr-2"></i> Message
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows="5"
+                  placeholder="Your Message"
+                  required
+                  disabled={status === 'sending'}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none disabled:opacity-60"
+                ></textarea>
+              </div>
+
+              {status === 'error' && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+                  <i className="fas fa-exclamation-circle shrink-0"></i>
+                  {errorMessage}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={status === 'sending'}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {status === 'sending' ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                    Sending…
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-paper-plane"></i> Send Message
+                  </>
+                )}
+              </button>
+            </form>
           )}
         </Reveal>
 
@@ -121,13 +169,11 @@ export default function Contact() {
             <h3 className="text-2xl font-semibold text-gray-800 mb-4">
               <i className="fas fa-map text-blue-600"></i> Our Location
             </h3>
-            <iframe
-              className="w-full h-64 rounded-lg"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3151.835434509366!2d144.9537363153167!3d-37.81720997975171!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6ad642af0f11fd81%3A0xf57798c3c9374b5!2s123%20Main%20St%2C%20Melbourne%20VIC%203000%2C%20Australia!5e0!3m2!1sen!2sus!4v1617196357886!5m2!1sen!2sus"
-              allowFullScreen=""
-              loading="lazy"
-              title="Location map"
-            ></iframe>
+            <LocationMap
+              lat={profile.mapLocation.lat}
+              lng={profile.mapLocation.lng}
+              label={profile.mapLocation.label}
+            />
           </Reveal>
         </div>
       </div>
