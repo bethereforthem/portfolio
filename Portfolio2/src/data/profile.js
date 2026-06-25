@@ -28,8 +28,16 @@ export const profile = {
   management, and problem solving skills. I am always eager to learn
   and earn more skills.`,
 
-  contactAddress: '123 Main Street, Musanze, Rwanda',
+  contactAddress: 'Musanze, Rwanda',
   workingHours: 'Mon-Fri, 9AM - 5PM',
+
+  // City-level coordinates only (kept intentionally imprecise for privacy).
+  // Update these if you move, or swap in exact coordinates if you want a precise pin.
+  mapLocation: {
+    lat: -1.4995,
+    lng: 29.6336,
+    label: 'Musanze, Rwanda',
+  },
 }
 
 export const languages = [
