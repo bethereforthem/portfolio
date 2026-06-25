@@ -1,266 +1,211 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import CallToAction from '../components/CallToAction'
 import Reveal from '../components/Reveal'
-import { useLocalStorage } from '../hooks/useLocalStorage'
-import { placeholderProjectCount, projects } from '../data/profile'
+import { projects as staticProjects } from '../data/profile'
+import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
+const STATUS_LABELS = {
+  completed: { label: 'Completed', bg: 'bg-green-100 text-green-700' },
+  'in-progress': { label: 'In Progress', bg: 'bg-yellow-100 text-yellow-700' },
+  planned: { label: 'Planned', bg: 'bg-gray-100 text-gray-500' },
+}
+
+// ── Public project card (admin-managed projects from Supabase) ──
 function ProjectCard({ project }) {
-  if (project.variant === 'card') {
-    return (
-      <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-        <div className="max-w-sm bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
-          <a href="#">
-            <img className="rounded-t-lg" src={project.image} alt={project.title} />
-          </a>
-          <div className="p-5">
-            <a href="#">
-              <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                <i className={`${project.icon} ${project.iconColor} mr-2`}></i>
-                {project.title}
-              </h5>
-            </a>
-            <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">{project.description}</p>
+  return (
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden">
+      {/* Image */}
+      <div className="h-48 bg-gray-100 overflow-hidden">
+        {project.image ? (
+          <img
+            src={project.image}
+            alt={project.title}
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <i className="fas fa-diagram-project text-gray-300 text-5xl"></i>
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="text-xl font-bold text-gray-800 leading-tight">{project.title}</h3>
+          {project.status && STATUS_LABELS[project.status] && (
+            <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_LABELS[project.status].bg}`}>
+              {STATUS_LABELS[project.status].label}
+            </span>
+          )}
+        </div>
+
+        {project.description && (
+          <p className="text-gray-600 text-sm mb-3 line-clamp-3">{project.description}</p>
+        )}
+
+        {/* Technologies */}
+        {project.technologies?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {project.technologies.map((t) => (
+              <span key={t} className="bg-blue-50 text-blue-700 text-xs px-2.5 py-0.5 rounded-full font-medium">
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Links */}
+        <div className="flex gap-2 mt-auto flex-wrap">
+          {project.github_link && (
             <a
-              href={project.link}
+              href={project.github_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-800 text-white text-sm font-medium hover:bg-gray-700 transition"
             >
-              <i className="fa-solid fa-arrow-right mr-2"></i> View project
+              <i className="fab fa-github"></i>GitHub
             </a>
-          </div>
+          )}
+          {project.live_demo && (
+            <a
+              href={project.live_demo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+            >
+              <i className="fas fa-external-link-alt"></i>Live Demo
+            </a>
+          )}
         </div>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
-  if (project.variant === 'currency') {
-    return (
-      <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center text-center space-y-4 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-        <img src={project.image} alt={project.title} className="w-full h-90 object-cover rounded-lg shadow-sm" />
-        <h3 className="text-2xl font-bold text-blue-700 flex items-center gap-2">
-          <i className={`${project.icon} ${project.iconColor}`}></i>
+// ── Static project card (keeps original design for legacy items) ──
+function StaticProjectCard({ project }) {
+  return (
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden">
+      <div className="h-48 bg-gray-100 overflow-hidden">
+        {project.image ? (
+          <img src={project.image} alt={project.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <i className="fas fa-diagram-project text-gray-300 text-5xl"></i>
+          </div>
+        )}
+      </div>
+      <div className="p-5 flex flex-col flex-1">
+        <h3 className="text-xl font-bold text-gray-800 mb-2">
+          {project.icon && <i className={`${project.icon} ${project.iconColor} mr-2`}></i>}
           {project.title}
         </h3>
-        <p className="text-gray-600 text-xl">{project.description}</p>
-        <a
-          href={project.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-        >
-          <i className="fa fa-link mr-2"></i>
-          View Project
-        </a>
+        {project.description && <p className="text-gray-600 text-sm mb-4 flex-1">{project.description}</p>}
+        {project.link && (
+          <a
+            href={project.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition self-start mt-auto"
+          >
+            <i className="fas fa-external-link-alt"></i>View Project
+          </a>
+        )}
       </div>
-    )
-  }
-
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center text-center space-y-4 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-      <img src={project.image} alt="To-Do List Project Screenshot" className="w-full max-w-md rounded-lg shadow" />
-      <h3 className="text-2xl font-bold text-indigo-700">{project.title}</h3>
-      <p className="text-gray-700 text-base">{project.description}</p>
-      <a
-        href={project.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-      >
-        🔗 View Project
-      </a>
     </div>
-  )
-}
-
-function CustomProjectCard({ project, onRemove }) {
-  return (
-    <div className="relative bg-white p-6 pt-10 rounded-xl shadow-lg flex flex-col items-center text-center space-y-4 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-      <span className="absolute top-3 left-3 text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
-        <i className="fas fa-user mr-1"></i> Added by you
-      </span>
-      <button
-        type="button"
-        onClick={() => onRemove(project.id)}
-        aria-label="Remove project"
-        className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 transition"
-      >
-        <i className="fas fa-times"></i>
-      </button>
-
-      {project.image ? (
-        <img src={project.image} alt={project.title} className="w-full h-48 object-cover rounded-lg shadow-sm" />
-      ) : (
-        <div className="w-full h-48 flex items-center justify-center rounded-lg bg-gray-100">
-          <i className="fa-solid fa-diagram-project text-gray-400 text-5xl"></i>
-        </div>
-      )}
-
-      <h3 className="text-2xl font-bold text-blue-700">{project.title}</h3>
-      {project.description && <p className="text-gray-600">{project.description}</p>}
-
-      {project.link && (
-        <a
-          href={project.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-        >
-          <i className="fa fa-link mr-2"></i>
-          View Project
-        </a>
-      )}
-    </div>
-  )
-}
-
-function AddProjectForm({ onAdd, onClose }) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [image, setImage] = useState('')
-  const [link, setLink] = useState('')
-  const [error, setError] = useState('')
-
-  function handleSubmit(event) {
-    event.preventDefault()
-    if (!title.trim() || !link.trim()) {
-      setError('Title and project link are required.')
-      return
-    }
-
-    onAdd({
-      id: crypto.randomUUID(),
-      title: title.trim(),
-      description: description.trim(),
-      image: image.trim(),
-      link: link.trim(),
-    })
-
-    setTitle('')
-    setDescription('')
-    setImage('')
-    setLink('')
-    setError('')
-    onClose()
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-lg space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-gray-800">
-          <i className="fas fa-plus-circle text-blue-600 mr-2"></i> Add a New Project
-        </h3>
-        <button type="button" onClick={onClose} aria-label="Close form" className="text-gray-400 hover:text-gray-600">
-          <i className="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          type="text"
-          placeholder="Project Title *"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          className="p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-        />
-        <input
-          type="url"
-          placeholder="Project Link *"
-          value={link}
-          onChange={(event) => setLink(event.target.value)}
-          className="p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-        />
-        <input
-          type="url"
-          placeholder="Image URL (optional)"
-          value={image}
-          onChange={(event) => setImage(event.target.value)}
-          className="p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none md:col-span-2"
-        />
-        <textarea
-          placeholder="Short description (optional)"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          rows="3"
-          className="p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none md:col-span-2"
-        ></textarea>
-      </div>
-
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <p className="text-xs text-gray-400 max-w-md">
-          <i className="fas fa-info-circle mr-1"></i>
-          Saved to this browser only — it won't appear for other visitors of your live site.
-        </p>
-        <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-transform hover:scale-105"
-        >
-          <i className="fas fa-check mr-2"></i> Add Project
-        </button>
-      </div>
-    </form>
   )
 }
 
 export default function Projects() {
-  const [customProjects, setCustomProjects] = useLocalStorage('portfolio:customProjects', [])
-  const [formOpen, setFormOpen] = useState(false)
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [usingStatic, setUsingStatic] = useState(false)
 
-  function handleAdd(project) {
-    setCustomProjects((current) => [...current, project])
-  }
+  useEffect(() => {
+    async function fetchProjects() {
+      if (!isSupabaseConfigured) {
+        setUsingStatic(true)
+        setProjects([])
+        setLoading(false)
+        return
+      }
 
-  function handleRemove(id) {
-    setCustomProjects((current) => current.filter((project) => project.id !== id))
-  }
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: false })
+
+      if (error || !data?.length) {
+        setUsingStatic(true)
+        setProjects([])
+      } else {
+        setProjects(data)
+      }
+      setLoading(false)
+    }
+    fetchProjects()
+  }, [])
+
+  const displayProjects = usingStatic ? [] : projects
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-6 pt-20 pb-4 flex items-center justify-between flex-wrap gap-4">
+      <div className="max-w-7xl mx-auto px-6 pt-20 pb-4">
         <h1 className="text-3xl font-bold text-gray-800">
-          <i className="fas fa-laptop-code text-blue-600 mr-2"></i> My Projects
+          <i className="fas fa-laptop-code text-blue-600 mr-2"></i>My Projects
         </h1>
-        <button
-          type="button"
-          onClick={() => setFormOpen((open) => !open)}
-          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full font-semibold transition-transform hover:scale-105"
-        >
-          <i className={`fas ${formOpen ? 'fa-minus' : 'fa-plus'}`}></i>
-          {formOpen ? 'Close Form' : 'Add Project'}
-        </button>
       </div>
 
-      {formOpen && (
-        <div className="max-w-7xl mx-auto px-6 pb-6">
-          <AddProjectForm onAdd={handleAdd} onClose={() => setFormOpen(false)} />
-        </div>
-      )}
+      <section className="max-w-7xl mx-auto px-6 pb-12">
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-lg overflow-hidden animate-pulse">
+                <div className="h-48 bg-gray-200"></div>
+                <div className="p-5 space-y-3">
+                  <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full"></div>
+                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/3 mt-4"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6 max-w-7xl mx-auto">
-        {projects.map((project, index) => (
-          <Reveal key={project.title} delay={index * 80}>
-            <ProjectCard project={project} />
-          </Reveal>
-        ))}
+        {/* Supabase projects */}
+        {!loading && !usingStatic && displayProjects.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {displayProjects.map((project, index) => (
+              <Reveal key={project.id} delay={index * 80}>
+                <ProjectCard project={project} />
+              </Reveal>
+            ))}
+          </div>
+        )}
 
-        {customProjects.map((project, index) => (
-          <Reveal key={project.id} delay={(projects.length + index) * 80}>
-            <CustomProjectCard project={project} onRemove={handleRemove} />
-          </Reveal>
-        ))}
+        {/* Static fallback projects */}
+        {!loading && usingStatic && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {staticProjects.map((project, index) => (
+              <Reveal key={project.title} delay={index * 80}>
+                <StaticProjectCard project={project} />
+              </Reveal>
+            ))}
+          </div>
+        )}
 
-        {Array.from({ length: placeholderProjectCount }).map((_, index) => (
-          <Reveal
-            key={index}
-            delay={(projects.length + customProjects.length + index) * 40}
-            className="bg-white p-6 rounded-xl shadow-lg flex flex-col justify-center items-center text-xl font-semibold hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-          >
-            <i className="fa-solid fa-gears text-gray-500 text-4xl mb-2"></i>
-            Under Development
-          </Reveal>
-        ))}
+        {/* Empty state */}
+        {!loading && !usingStatic && displayProjects.length === 0 && (
+          <div className="text-center py-20">
+            <i className="fas fa-folder-open text-gray-300 text-6xl mb-4"></i>
+            <p className="text-gray-500 text-lg font-medium">No projects published yet.</p>
+            <p className="text-gray-400 text-sm mt-1">Check back soon!</p>
+          </div>
+        )}
       </section>
 
       <div className="max-w-7xl mx-auto px-6 pb-12">
