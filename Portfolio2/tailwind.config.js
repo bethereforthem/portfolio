@@ -25,6 +25,14 @@ export default {
           from: { width: '0%' },
           to:   { width: '100%' },
         },
+        marquee: {
+          from: { transform: 'translateX(0)' },
+          to:   { transform: 'translateX(-50%)' },
+        },
+        'scroll-dot': {
+          '0%, 100%': { transform: 'translateY(0)', opacity: '1' },
+          '50%':       { transform: 'translateY(10px)', opacity: '0' },
+        },
       },
       animation: {
         float:             'float 3s ease-in-out infinite',
@@ -32,6 +40,8 @@ export default {
         'gradient-shift':  'gradientShift 18s ease infinite',
         'fade-in-up':      'fadeInUp 0.6s ease-out forwards',
         'progress-fill':   'progressFill 1.2s ease-out forwards',
+        marquee:           'marquee 30s linear infinite',
+        'scroll-dot':      'scroll-dot 1.6s ease-in-out infinite',
       },
     },
   },
