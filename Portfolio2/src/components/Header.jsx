@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useProfile } from '../contexts/ProfileContext'
 import { navLinks } from '../data/navLinks'
-import { profile } from '../data/profile'
 
 function useClickAway(ref, onAway) {
   useEffect(() => {
@@ -42,13 +42,16 @@ export default function Header() {
   useClickAway(contactRef, () => setContactOpen(false))
   useClickAway(menuRef, () => setIsOpen(false))
 
+  const { profileData } = useProfile()
+  const { name, email, whatsappLink } = profileData
+
   return (
     <header className="fixed w-full top-0 left-0 bg-gradient-to-r from-blue-700 to-purple-600 text-white pt-[3px] shadow-lg z-50">
       <div className="flex items-center justify-between py-4 px-8">
         {/* Logo */}
         <div className="flex items-center space-x-4">
           <img src="/images/logo.png" alt="Logo" className="w-12 h-12 rounded-full shadow-md" />
-          <span className="text-2xl font-bold">{profile.name}</span>
+          <span className="text-2xl font-bold">{name}</span>
         </div>
 
         {/* Desktop nav */}
@@ -78,10 +81,10 @@ export default function Header() {
 
           {contactOpen && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-white text-black rounded-lg shadow-xl py-2 z-10">
-              <a href={`mailto:${profile.email}`} className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors">
+              <a href={`mailto:${email}`} className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors">
                 <i className="fas fa-envelope text-blue-500 mr-2"></i> Email
               </a>
-              <a href={profile.whatsappLink} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors">
+              <a href={whatsappLink} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors">
                 <i className="fab fa-whatsapp text-green-500 mr-2"></i> WhatsApp
               </a>
             </div>
@@ -133,10 +136,10 @@ export default function Header() {
 
             {mobileContactOpen && (
               <div className="flex flex-col items-stretch bg-white text-black rounded-xl shadow-lg w-48 py-2">
-                <a href={`mailto:${profile.email}`} className="flex items-center px-4 py-2.5 hover:bg-gray-100 transition-colors">
+                <a href={`mailto:${email}`} className="flex items-center px-4 py-2.5 hover:bg-gray-100 transition-colors">
                   <i className="fas fa-envelope text-blue-500 mr-2"></i> Email Me
                 </a>
-                <a href={profile.whatsappLink} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2.5 hover:bg-gray-100 transition-colors">
+                <a href={whatsappLink} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2.5 hover:bg-gray-100 transition-colors">
                   <i className="fab fa-whatsapp text-green-500 mr-2"></i> WhatsApp Me
                 </a>
               </div>
