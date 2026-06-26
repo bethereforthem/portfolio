@@ -3,14 +3,53 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>David - Portfolio</title>
-    <link rel="shortcut icon" href="/images/david2.png" type="image/x-icon" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    />
+
+    <!-- Primary SEO -->
+    <title>David Kayigamba | Software Developer</title>
+    <meta name="description" content="David Kayigamba — Software Developer from Rwanda specialising in React, Node.js, Python, and modern full-stack web development." />
+    <meta name="keywords" content="David Kayigamba, Software Developer, React Developer, Full Stack, Rwanda, Web Development, Portfolio, Node.js, Python" />
+    <meta name="author" content="David Kayigamba" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#1e3a5f" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content="https://davidkayigamba.netlify.app/" />
+    <meta property="og:title"       content="David Kayigamba | Software Developer" />
+    <meta property="og:description" content="Software Developer from Rwanda — React, Node.js, Python, full-stack web." />
+    <meta property="og:image"       content="/images/david2.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="David Kayigamba | Software Developer" />
+    <meta name="twitter:description" content="Software Developer from Rwanda — React, Node.js, Python." />
+    <meta name="twitter:image"       content="/images/david2.png" />
+
+    <!-- Favicon -->
+    <link rel="shortcut icon"   href="/images/david2.png" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="/images/david2.png" />
+
+    <!-- Google Fonts: Inter + Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <!-- Anti-FOUC: apply saved theme before first paint -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-gray-100 m-0 p-0">
+  <body class="bg-gray-50 dark:bg-gray-900 m-0 p-0 transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
