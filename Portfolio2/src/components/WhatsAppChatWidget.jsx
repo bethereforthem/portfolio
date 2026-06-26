@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { profile } from '../data/profile'
+import { useProfile } from '../contexts/ProfileContext'
 
 export default function WhatsAppChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
+  const { profileData } = useProfile()
+  const { name, fullName, whatsappLink, profileImage } = profileData
 
   function handleSend(event) {
     event.preventDefault()
-    const text = message.trim() || `Hi ${profile.name}, I'd like to talk about a project.`
-    const url = `${profile.whatsappLink}?text=${encodeURIComponent(text)}`
+    const text = message.trim() || `Hi ${name}, I'd like to talk about a project.`
+    const url = `${whatsappLink}?text=${encodeURIComponent(text)}`
     window.open(url, '_blank', 'noopener,noreferrer')
     setMessage('')
     setIsOpen(false)
@@ -21,12 +23,13 @@ export default function WhatsAppChatWidget() {
           <div className="bg-[#075E54] text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img
-                src="/images/david2.png"
-                alt={profile.fullName}
+                src={profileImage}
+                alt={fullName}
                 className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                onError={(e) => { e.target.src = '/images/david2.png' }}
               />
               <div>
-                <p className="font-semibold leading-tight">{profile.fullName}</p>
+                <p className="font-semibold leading-tight">{fullName}</p>
                 <p className="text-xs text-green-100">Typically replies within a day</p>
               </div>
             </div>
