@@ -33,5 +33,10 @@ export function ThemeProvider({ children }) {
 }
 
 export function useTheme() {
-  return useContext(ThemeContext)
+  const ctx = useContext(ThemeContext)
+  if (!ctx) {
+    // Fallback so components never crash if rendered outside ThemeProvider
+    return { dark: false, toggle: () => {} }
+  }
+  return ctx
 }
