@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { navLinks } from '../data/navLinks'
 import { profile } from '../data/profile'
 
@@ -15,6 +15,22 @@ function useClickAway(ref, onAway) {
   }, [ref, onAway])
 }
 
+function desktopLinkClass({ isActive }) {
+  const base = 'relative flex items-center gap-1.5 px-1 py-0.5 transition-all duration-200'
+  if (isActive) {
+    return `${base} text-yellow-300 font-bold after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2px] after:rounded-full after:bg-yellow-300`
+  }
+  return `${base} text-white/90 hover:text-yellow-300`
+}
+
+function mobileLinkClass({ isActive }) {
+  const base = 'flex items-center gap-2 w-full px-5 py-2.5 rounded-xl transition-all duration-200 font-semibold'
+  if (isActive) {
+    return `${base} bg-white/20 text-yellow-300 shadow-inner`
+  }
+  return `${base} text-white hover:bg-white/10 hover:text-yellow-300`
+}
+
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [contactOpen, setContactOpen] = useState(false)
@@ -27,82 +43,100 @@ export default function Header() {
   useClickAway(menuRef, () => setIsOpen(false))
 
   return (
-    <header className="fixed w-full top-0 left-0 bg-gradient-to-r from-blue-700 to-purple-600 text-white py-4 px-8 shadow-lg z-50">
-      <div className="flex items-center justify-between">
+    <header className="fixed w-full top-0 left-0 bg-gradient-to-r from-blue-700 to-purple-600 text-white pt-[3px] shadow-lg z-50">
+      <div className="flex items-center justify-between py-4 px-8">
+        {/* Logo */}
         <div className="flex items-center space-x-4">
           <img src="/images/logo.png" alt="Logo" className="w-12 h-12 rounded-full shadow-md" />
           <span className="text-2xl font-bold">{profile.name}</span>
         </div>
 
-        <nav className="hidden md:flex space-x-8 text-lg font-semibold">
+        {/* Desktop nav */}
+        <nav className="hidden md:flex space-x-6 text-lg font-semibold">
           {navLinks.map((link) => (
-            <Link key={link.path} to={link.path} className="hover:text-yellow-300 flex items-center gap-1">
-              <i className={link.headerIcon}></i> {link.label}
-            </Link>
+            <NavLink
+              key={link.path}
+              to={link.path}
+              end={link.path === '/'}
+              className={desktopLinkClass}
+            >
+              <i className={link.headerIcon}></i>
+              {link.label}
+            </NavLink>
           ))}
         </nav>
 
+        {/* Desktop Text Me */}
         <div className="hidden md:flex items-center relative" ref={contactRef}>
           <button
             onClick={() => setContactOpen((open) => !open)}
-            className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-full font-semibold focus:outline-none"
+            className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-full font-semibold focus:outline-none transition-colors"
           >
             <i className="fas fa-comments"></i> Text Me
-            <i className="fas fa-caret-down"></i>
+            <i className={`fas fa-caret-${contactOpen ? 'up' : 'down'}`}></i>
           </button>
 
           {contactOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white text-black rounded-lg shadow-lg py-2">
-              <a href={`mailto:${profile.email}`} className="flex items-center px-4 py-2 hover:bg-gray-200">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white text-black rounded-lg shadow-xl py-2 z-10">
+              <a href={`mailto:${profile.email}`} className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors">
                 <i className="fas fa-envelope text-blue-500 mr-2"></i> Email
               </a>
-              <a href={profile.whatsappLink} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2 hover:bg-gray-200">
+              <a href={profile.whatsappLink} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors">
                 <i className="fab fa-whatsapp text-green-500 mr-2"></i> WhatsApp
               </a>
             </div>
           )}
         </div>
 
+        {/* Hamburger */}
         <div className="md:hidden flex items-center">
-          <button onClick={() => setIsOpen((open) => !open)} className="focus:outline-none">
+          <button onClick={() => setIsOpen((open) => !open)} className="focus:outline-none p-1" aria-label="Toggle menu">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {!isOpen && (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16"></path>
-              )}
-              {isOpen && (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              {isOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
               )}
             </svg>
           </button>
         </div>
       </div>
 
+      {/* Mobile menu */}
       {isOpen && (
         <div
           ref={menuRef}
-          className="md:hidden bg-gradient-to-r from-blue-700 to-purple-600 text-white rounded-b-xl shadow-lg flex flex-col items-center space-y-4 py-6 text-lg font-semibold z-40 mt-4"
+          className="md:hidden bg-gradient-to-b from-blue-700 to-purple-700 text-white rounded-b-2xl shadow-lg flex flex-col items-stretch gap-1 px-4 pb-5 pt-2 z-40"
         >
           {navLinks.map((link) => (
-            <Link key={link.path} to={link.path} className="hover:text-yellow-300 flex items-center gap-2">
-              <i className={link.headerIcon}></i> {link.label}
-            </Link>
+            <NavLink
+              key={link.path}
+              to={link.path}
+              end={link.path === '/'}
+              onClick={() => setIsOpen(false)}
+              className={mobileLinkClass}
+            >
+              <i className={`${link.headerIcon} w-5 text-center`}></i>
+              {link.label}
+            </NavLink>
           ))}
 
-          <div className="w-full flex flex-col items-center space-y-2">
+          {/* Mobile Text Me */}
+          <div className="flex flex-col items-center gap-2 mt-2">
             <button
               onClick={() => setMobileContactOpen((open) => !open)}
-              className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-full font-semibold focus:outline-none"
+              className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black px-5 py-2.5 rounded-full font-semibold focus:outline-none transition-colors"
             >
               <i className="fas fa-comments"></i> Text Me
-              <i className="fas fa-caret-down"></i>
+              <i className={`fas fa-caret-${mobileContactOpen ? 'up' : 'down'}`}></i>
             </button>
 
             {mobileContactOpen && (
-              <div className="flex flex-col items-center bg-white text-black rounded-lg shadow-lg w-48 py-2 mt-2">
-                <a href={`mailto:${profile.email}`} className="flex items-center px-4 py-2 hover:bg-gray-200 w-full">
+              <div className="flex flex-col items-stretch bg-white text-black rounded-xl shadow-lg w-48 py-2">
+                <a href={`mailto:${profile.email}`} className="flex items-center px-4 py-2.5 hover:bg-gray-100 transition-colors">
                   <i className="fas fa-envelope text-blue-500 mr-2"></i> Email Me
                 </a>
-                <a href={profile.whatsappLink} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2 hover:bg-gray-200 w-full">
+                <a href={profile.whatsappLink} target="_blank" rel="noreferrer" className="flex items-center px-4 py-2.5 hover:bg-gray-100 transition-colors">
                   <i className="fab fa-whatsapp text-green-500 mr-2"></i> WhatsApp Me
                 </a>
               </div>
