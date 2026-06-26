@@ -4,114 +4,80 @@ import Reveal from '../components/Reveal'
 import { projects as staticProjects } from '../data/profile'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
-const STATUS_LABELS = {
-  completed: { label: 'Completed', bg: 'bg-green-100 text-green-700' },
-  'in-progress': { label: 'In Progress', bg: 'bg-yellow-100 text-yellow-700' },
-  planned: { label: 'Planned', bg: 'bg-gray-100 text-gray-500' },
-}
-
-// ── Public project card (admin-managed projects from Supabase) ──
+// ── Unified project card — same Flowbite style for all projects ──
 function ProjectCard({ project }) {
+  // Support both Supabase shape (live_demo, github_link) and static shape (link)
+  const primaryLink = project.live_demo || project.link
+  const githubLink = project.github_link
+
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden">
-      {/* Image */}
-      <div className="h-48 bg-gray-100 overflow-hidden">
+    <div className="bg-white p-4 rounded-xl shadow-lg flex flex-col items-center hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+      <div className="w-full bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700 flex flex-col h-full">
+        {/* Image */}
         {project.image ? (
           <img
+            className="rounded-t-lg w-full h-48 object-cover"
             src={project.image}
             alt={project.title}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="rounded-t-lg w-full h-48 bg-gray-100 flex items-center justify-center">
             <i className="fas fa-diagram-project text-gray-300 text-5xl"></i>
           </div>
         )}
-      </div>
 
-      {/* Body */}
-      <div className="p-5 flex flex-col flex-1">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="text-xl font-bold text-gray-800 leading-tight">{project.title}</h3>
-          {project.status && STATUS_LABELS[project.status] && (
-            <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_LABELS[project.status].bg}`}>
-              {STATUS_LABELS[project.status].label}
-            </span>
+        <div className="p-5 flex flex-col flex-1">
+          {/* Title */}
+          <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            {project.icon && <i className={`${project.icon} ${project.iconColor ?? ''} mr-2`}></i>}
+            {project.title}
+          </h5>
+
+          {/* Description */}
+          {project.description && (
+            <p className="mb-3 font-normal text-gray-700 dark:text-gray-400 flex-1">
+              {project.description}
+            </p>
           )}
-        </div>
 
-        {project.description && (
-          <p className="text-gray-600 text-sm mb-3 line-clamp-3">{project.description}</p>
-        )}
+          {/* Technologies */}
+          {project.technologies?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {project.technologies.map((t) => (
+                <span
+                  key={t}
+                  className="bg-blue-50 text-blue-700 text-xs px-2.5 py-0.5 rounded-full font-medium"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
 
-        {/* Technologies */}
-        {project.technologies?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {project.technologies.map((t) => (
-              <span key={t} className="bg-blue-50 text-blue-700 text-xs px-2.5 py-0.5 rounded-full font-medium">
-                {t}
-              </span>
-            ))}
+          {/* Action buttons */}
+          <div className="flex gap-2 flex-wrap mt-auto pt-2">
+            {primaryLink && (
+              <a
+                href={primaryLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 transition"
+              >
+                <i className="fa-solid fa-arrow-right mr-2"></i>View project
+              </a>
+            )}
+            {githubLink && (
+              <a
+                href={githubLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:ring-4 focus:outline-none focus:ring-gray-400 transition"
+              >
+                <i className="fab fa-github mr-2"></i>GitHub
+              </a>
+            )}
           </div>
-        )}
-
-        {/* Links */}
-        <div className="flex gap-2 mt-auto flex-wrap">
-          {project.github_link && (
-            <a
-              href={project.github_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-800 text-white text-sm font-medium hover:bg-gray-700 transition"
-            >
-              <i className="fab fa-github"></i>GitHub
-            </a>
-          )}
-          {project.live_demo && (
-            <a
-              href={project.live_demo}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
-            >
-              <i className="fas fa-external-link-alt"></i>Live Demo
-            </a>
-          )}
         </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Static project card (keeps original design for legacy items) ──
-function StaticProjectCard({ project }) {
-  return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden">
-      <div className="h-48 bg-gray-100 overflow-hidden">
-        {project.image ? (
-          <img src={project.image} alt={project.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <i className="fas fa-diagram-project text-gray-300 text-5xl"></i>
-          </div>
-        )}
-      </div>
-      <div className="p-5 flex flex-col flex-1">
-        <h3 className="text-xl font-bold text-gray-800 mb-2">
-          {project.icon && <i className={`${project.icon} ${project.iconColor} mr-2`}></i>}
-          {project.title}
-        </h3>
-        {project.description && <p className="text-gray-600 text-sm mb-4 flex-1">{project.description}</p>}
-        {project.link && (
-          <a
-            href={project.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition self-start mt-auto"
-          >
-            <i className="fas fa-external-link-alt"></i>View Project
-          </a>
-        )}
       </div>
     </div>
   )
@@ -126,7 +92,6 @@ export default function Projects() {
     async function fetchProjects() {
       if (!isSupabaseConfigured) {
         setUsingStatic(true)
-        setProjects([])
         setLoading(false)
         return
       }
@@ -139,7 +104,6 @@ export default function Projects() {
 
       if (error || !data?.length) {
         setUsingStatic(true)
-        setProjects([])
       } else {
         setProjects(data)
       }
@@ -148,7 +112,7 @@ export default function Projects() {
     fetchProjects()
   }, [])
 
-  const displayProjects = usingStatic ? [] : projects
+  const displayProjects = usingStatic ? staticProjects : projects
 
   return (
     <>
@@ -176,30 +140,19 @@ export default function Projects() {
           </div>
         )}
 
-        {/* Supabase projects */}
-        {!loading && !usingStatic && displayProjects.length > 0 && (
+        {/* Project grid */}
+        {!loading && displayProjects.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayProjects.map((project, index) => (
-              <Reveal key={project.id} delay={index * 80}>
+              <Reveal key={project.id ?? project.title} delay={index * 80}>
                 <ProjectCard project={project} />
               </Reveal>
             ))}
           </div>
         )}
 
-        {/* Static fallback projects */}
-        {!loading && usingStatic && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {staticProjects.map((project, index) => (
-              <Reveal key={project.title} delay={index * 80}>
-                <StaticProjectCard project={project} />
-              </Reveal>
-            ))}
-          </div>
-        )}
-
         {/* Empty state */}
-        {!loading && !usingStatic && displayProjects.length === 0 && (
+        {!loading && displayProjects.length === 0 && (
           <div className="text-center py-20">
             <i className="fas fa-folder-open text-gray-300 text-6xl mb-4"></i>
             <p className="text-gray-500 text-lg font-medium">No projects published yet.</p>
