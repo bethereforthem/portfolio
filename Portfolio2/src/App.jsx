@@ -14,6 +14,7 @@ const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminProjects = lazy(() => import('./pages/admin/AdminProjects'))
 const AdminSkills = lazy(() => import('./pages/admin/AdminSkills'))
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
 
 function AdminFallback() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="projects" element={<AdminProjects />} />
           <Route path="skills" element={<AdminSkills />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
     </AuthProvider>
