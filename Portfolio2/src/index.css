@@ -71,10 +71,17 @@
   50%       { background-position: 100% 50%; }
 }
 
+/* Light mode: rich mid-blue gradient (text stays white) */
 .hero-gradient {
-  background: linear-gradient(-45deg, #0f172a, #1e1b4b, #0f2d5e, #312e81, #1e40af, #0f172a);
+  background: linear-gradient(-45deg, #1e40af, #2563eb, #1d4ed8, #4338ca, #6d28d9, #1e40af);
   background-size: 400% 400%;
   animation: gradientShift 18s ease infinite;
+}
+
+/* Dark mode: deep navy gradient */
+.dark .hero-gradient {
+  background: linear-gradient(-45deg, #0f172a, #1e1b4b, #0f2d5e, #312e81, #1e40af, #0f172a);
+  background-size: 400% 400%;
 }
 
 /* ── Typing cursor blink ─────────────────────────────────── */
