@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import ThemeToggle from './ThemeToggle'
 import { useProfile } from '../contexts/ProfileContext'
 import { navLinks } from '../data/navLinks'
 
@@ -69,6 +70,9 @@ export default function Header() {
           ))}
         </nav>
 
+        {/* Dark mode toggle (desktop) */}
+        <ThemeToggle className="hidden md:flex" />
+
         {/* Desktop Text Me */}
         <div className="hidden md:flex items-center relative" ref={contactRef}>
           <button
@@ -91,9 +95,10 @@ export default function Header() {
           )}
         </div>
 
-        {/* Hamburger */}
-        <div className="md:hidden flex items-center">
-          <button onClick={() => setIsOpen((open) => !open)} className="focus:outline-none p-1" aria-label="Toggle menu">
+        {/* Hamburger + mobile theme toggle */}
+        <div className="md:hidden flex items-center gap-1">
+          <ThemeToggle />
+          <button onClick={() => setIsOpen((open) => !open)} className="focus:outline-none p-1" aria-label="Toggle menu" aria-expanded={isOpen} aria-controls="mobile-menu">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -108,6 +113,7 @@ export default function Header() {
       {/* Mobile menu */}
       {isOpen && (
         <div
+          id="mobile-menu"
           ref={menuRef}
           className="md:hidden bg-gradient-to-b from-blue-700 to-purple-700 text-white rounded-b-2xl shadow-lg flex flex-col items-stretch gap-1 px-4 pb-5 pt-2 z-40"
         >
