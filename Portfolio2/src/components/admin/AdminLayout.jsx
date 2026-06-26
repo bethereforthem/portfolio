@@ -6,6 +6,7 @@ const navItems = [
   { to: '/admin', label: 'Dashboard', icon: 'fas fa-tachometer-alt', exact: true },
   { to: '/admin/projects', label: 'Projects', icon: 'fas fa-laptop-code' },
   { to: '/admin/skills', label: 'Skills', icon: 'fas fa-code' },
+  { to: '/admin/settings', label: 'Settings', icon: 'fas fa-cog' },
 ]
 
 export default function AdminLayout() {
