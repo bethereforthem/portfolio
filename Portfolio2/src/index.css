@@ -10,6 +10,22 @@
 
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Smooth dark/light transition on every element that carries bg or text color */
+  *, *::before, *::after {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 250ms;
+    transition-timing-function: ease;
+  }
+
+  /* Re-allow fast hover/transform transitions — override the global above */
+  *:where(a, button, [role="button"]) {
+    transition-property: background-color, border-color, color, fill, stroke,
+                         opacity, transform, box-shadow;
+    transition-duration: 200ms;
   }
 
   /* Accessible focus ring */
