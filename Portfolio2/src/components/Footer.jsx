@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useProfile } from '../contexts/ProfileContext'
 import { navLinks } from '../data/navLinks'
-import { profile } from '../data/profile'
 
 export default function Footer() {
+  const { profileData } = useProfile()
+  const { email, phone, location } = profileData
   return (
     <footer className="bg-gray-900 text-gray-300 p-10 mt-10">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -23,15 +25,15 @@ export default function Footer() {
           <h2 className="text-2xl font-bold mb-4 text-yellow-400">Contact Info</h2>
           <p className="mb-2 flex items-center gap-2">
             <i className="fa fa-envelope"></i>{' '}
-            <a href={`mailto:${profile.email}`} className="hover:text-yellow-300">
-              {profile.email}
+            <a href={`mailto:${email}`} className="hover:text-yellow-300">
+              {email}
             </a>
           </p>
           <p className="mb-2 flex items-center gap-2">
-            <i className="fa fa-phone"></i> {profile.phone}
+            <i className="fa fa-phone"></i> {phone}
           </p>
           <p className="mb-2 flex items-center gap-2">
-            <i className="fa fa-map-marker-alt"></i> {profile.location}
+            <i className="fa fa-map-marker-alt"></i> {location}
           </p>
         </div>
 
