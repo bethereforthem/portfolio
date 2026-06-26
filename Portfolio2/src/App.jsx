@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider } from './contexts/AuthContext'
+import { ProfileProvider } from './contexts/ProfileContext'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Home from './pages/Home'
@@ -30,6 +31,7 @@ function AdminFallback() {
 export default function App() {
   return (
     <AuthProvider>
+      <ProfileProvider>
       <Routes>
         {/* Public portfolio */}
         <Route element={<Layout />}>
@@ -63,6 +65,7 @@ export default function App() {
           <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
+      </ProfileProvider>
     </AuthProvider>
   )
 }
