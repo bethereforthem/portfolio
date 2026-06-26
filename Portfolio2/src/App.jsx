@@ -4,9 +4,11 @@ import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider } from './contexts/AuthContext'
 import { ProfileProvider } from './contexts/ProfileContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Home from './pages/Home'
+import NotFound from './pages/NotFound'
 import Projects from './pages/Projects'
 import Skills from './pages/Skills'
 
@@ -30,6 +32,7 @@ function AdminFallback() {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <ProfileProvider>
       <Routes>
@@ -40,6 +43,7 @@ export default function App() {
           <Route path="/skills" element={<Skills />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
 
         {/* Admin — login (no protection needed) */}
@@ -67,5 +71,6 @@ export default function App() {
       </Routes>
       </ProfileProvider>
     </AuthProvider>
+    </ThemeProvider>
   )
 }
