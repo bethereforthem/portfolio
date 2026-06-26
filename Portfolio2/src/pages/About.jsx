@@ -1,27 +1,10 @@
-import { useEffect, useState } from 'react'
 import CallToAction from '../components/CallToAction'
 import Reveal from '../components/Reveal'
-import { languages, profile } from '../data/profile'
-import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { useProfile } from '../contexts/ProfileContext'
 
 export default function About() {
-  const [cvUrl, setCvUrl] = useState(profile.cvUrl)
-  const [resumeUrl, setResumeUrl] = useState(profile.resumeUrl)
-
-  useEffect(() => {
-    if (!isSupabaseConfigured) return
-    supabase
-      .from('settings')
-      .select('key, value')
-      .in('key', ['cv_url', 'resume_url'])
-      .then(({ data }) => {
-        if (!data) return
-        data.forEach(({ key, value }) => {
-          if (key === 'cv_url' && value) setCvUrl(value)
-          if (key === 'resume_url' && value) setResumeUrl(value)
-        })
-      })
-  }, [])
+  const { profileData, socialLinks, languages } = useProfile()
+  const { fullName, profileImage, aboutLocation, phone, whatsappLink, university, linkedin, bio, cvUrl, resumeUrl } = profileData
   return (
     <>
       <div className="pt-32"></div>
@@ -30,35 +13,48 @@ export default function About() {
         {/* Profile Card */}
         <Reveal className="bg-white p-8 rounded-2xl shadow-xl flex flex-col items-center text-center hover:scale-105 hover:shadow-2xl transition-transform">
           <img
-            src="/images/david2.png"
-            alt="David"
-            className="rounded-full border-4 border-green-400 w-48 h-48 shadow-md mb-6"
+            src={profileImage}
+            alt={fullName}
+            className="rounded-full border-4 border-green-400 w-48 h-48 shadow-md mb-6 object-cover"
+            onError={(e) => { e.target.src = '/images/david2.png' }}
           />
-          <h2 className="text-4xl font-bold text-gray-800 mb-6">{profile.fullName}</h2>
+          <h2 className="text-4xl font-bold text-gray-800 mb-6">{fullName}</h2>
 
           <div className="mt-4 flex flex-col space-y-4 text-gray-600 text-lg items-start">
             <div className="flex items-center">
               <i className="fas fa-map-marker-alt text-green-500 w-6"></i>
-              <span className="ml-3">{profile.aboutLocation}</span>
+              <span className="ml-3">{aboutLocation}</span>
             </div>
             <div className="flex items-center">
               <i className="fas fa-phone text-blue-500 w-6"></i>
-              <span className="ml-3">{profile.phone}</span>
+              <span className="ml-3">{phone}</span>
             </div>
-            <div className="flex items-center">
-              <i className="fab fa-whatsapp text-green-600 w-6"></i>
-              <span className="ml-3">{profile.phone}</span>
-            </div>
+            {whatsappLink && (
+              <div className="flex items-center">
+                <i className="fab fa-whatsapp text-green-600 w-6"></i>
+                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="ml-3 hover:underline text-green-700">{phone}</a>
+              </div>
+            )}
             <div className="flex items-center">
               <i className="fas fa-graduation-cap text-purple-500 w-6"></i>
-              <span className="ml-3">{profile.university}</span>
+              <span className="ml-3">{university}</span>
             </div>
-            <div className="flex items-center">
-              <i className="fab fa-linkedin text-blue-700 w-6"></i>
-              <a href={profile.linkedin.url} className="ml-3 hover:underline text-blue-700">
-                {profile.linkedin.label}
-              </a>
-            </div>
+            {linkedin?.url && (
+              <div className="flex items-center">
+                <i className="fab fa-linkedin text-blue-700 w-6"></i>
+                <a href={linkedin.url} className="ml-3 hover:underline text-blue-700">
+                  {linkedin.label}
+                </a>
+              </div>
+            )}
+            {socialLinks.map((link) => (
+              <div key={link.id} className="flex items-center">
+                <i className={`${link.icon} ${link.color} w-6 text-center`}></i>
+                <a href={link.url} target="_blank" rel="noopener noreferrer" className="ml-3 hover:underline">
+                  {link.label}
+                </a>
+              </div>
+            ))}
           </div>
         </Reveal>
 
@@ -129,7 +125,7 @@ export default function About() {
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">
             <i className="fas fa-user text-yellow-500 mr-2"></i> Bio
           </h2>
-          <p className="text-xl text-gray-700 text-center leading-relaxed">{profile.bio}</p>
+          <p className="text-xl text-gray-700 text-center leading-relaxed">{bio}</p>
         </Reveal>
       </div>
 
