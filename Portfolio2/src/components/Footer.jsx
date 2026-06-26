@@ -124,9 +124,7 @@ export default function Footer() {
         {/* Divider + copyright */}
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
           <p>&copy; {year} David Kayigamba. All rights reserved.</p>
-          <p className="flex items-center gap-1">
-            Built with <i className="fab fa-react text-cyan-400 mx-1" aria-hidden="true"></i> React &amp; <i className="fas fa-heart text-red-400 mx-1" aria-hidden="true"></i> in Rwanda
-          </p>
+          <p>Designed &amp; developed by David Kayigamba</p>
         </div>
       </div>
     </footer>
