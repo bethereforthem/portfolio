@@ -1,12 +1,15 @@
 import { useRef, useState } from 'react'
 import LocationMap from '../components/LocationMap'
 import Reveal from '../components/Reveal'
+import { useProfile } from '../contexts/ProfileContext'
 import { profile } from '../data/profile'
 
 export default function Contact() {
   const formRef = useRef(null)
   const [status, setStatus] = useState('idle') // idle | sending | success | error
   const [errorMessage, setErrorMessage] = useState('')
+  const { profileData } = useProfile()
+  const { contactAddress, phone, email, workingHours } = profileData
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -149,19 +152,19 @@ export default function Contact() {
             </h3>
             <p className="text-gray-600 mb-2">
               <i className="fas fa-map-marker-alt text-blue-500 mr-2"></i>
-              <strong>Location:</strong> {profile.contactAddress}
+              <strong>Location:</strong> {contactAddress}
             </p>
             <p className="text-gray-600 mb-2">
               <i className="fas fa-phone text-blue-500 mr-2"></i>
-              <strong>Phone:</strong> {profile.phone}
+              <strong>Phone:</strong> {phone}
             </p>
             <p className="text-gray-600 mb-2">
               <i className="fas fa-envelope text-blue-500 mr-2"></i>
-              <strong>Email:</strong> {profile.email}
+              <strong>Email:</strong> {email}
             </p>
             <p className="text-gray-600">
               <i className="fas fa-clock text-blue-500 mr-2"></i>
-              <strong>Working Hours:</strong> {profile.workingHours}
+              <strong>Working Hours:</strong> {workingHours}
             </p>
           </Reveal>
 
