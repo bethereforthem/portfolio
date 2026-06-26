@@ -1,8 +1,27 @@
+import { useEffect, useState } from 'react'
 import CallToAction from '../components/CallToAction'
 import Reveal from '../components/Reveal'
 import { languages, profile } from '../data/profile'
+import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
 export default function About() {
+  const [cvUrl, setCvUrl] = useState(profile.cvUrl)
+  const [resumeUrl, setResumeUrl] = useState(profile.resumeUrl)
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    supabase
+      .from('settings')
+      .select('key, value')
+      .in('key', ['cv_url', 'resume_url'])
+      .then(({ data }) => {
+        if (!data) return
+        data.forEach(({ key, value }) => {
+          if (key === 'cv_url' && value) setCvUrl(value)
+          if (key === 'resume_url' && value) setResumeUrl(value)
+        })
+      })
+  }, [])
   return (
     <>
       <div className="pt-32"></div>
@@ -77,7 +96,7 @@ export default function About() {
               certifications.
             </p>
             <div className="flex justify-center">
-              <a href={profile.cvUrl} target="_blank" rel="noopener noreferrer">
+              <a href={cvUrl} target="_blank" rel="noopener noreferrer">
                 <button className="bg-green-500 hover:bg-green-700 text-white text-lg font-semibold px-6 py-2 rounded-lg flex items-center space-x-2 transition-transform hover:scale-105">
                   <i className="fas fa-eye"></i>
                   <span>See my CV</span>
@@ -92,7 +111,7 @@ export default function About() {
               projects, and relevant work experience.
             </p>
             <div className="flex justify-center">
-              <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer">
+              <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
                 <button className="bg-indigo-500 hover:bg-indigo-700 text-white text-lg font-semibold px-6 py-2 rounded-lg flex items-center space-x-2 transition-transform hover:scale-105">
                   <i className="fas fa-eye"></i>
                   <span>See my Resume</span>
