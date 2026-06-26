@@ -47,7 +47,7 @@ export default function Header() {
   const { name, email, whatsappLink } = profileData
 
   return (
-    <header className="fixed w-full top-0 left-0 bg-gradient-to-r from-blue-700 to-purple-600 text-white pt-[3px] shadow-lg z-50">
+    <header className="fixed w-full top-0 left-0 bg-gradient-to-r from-blue-700 to-purple-600 dark:from-gray-950 dark:to-gray-900 text-white pt-[3px] shadow-lg dark:shadow-gray-900/80 z-50 transition-colors duration-300">
       <div className="flex items-center justify-between py-4 px-8">
         {/* Logo */}
         <div className="flex items-center space-x-4">
@@ -115,7 +115,7 @@ export default function Header() {
         <div
           id="mobile-menu"
           ref={menuRef}
-          className="md:hidden bg-gradient-to-b from-blue-700 to-purple-700 text-white rounded-b-2xl shadow-lg flex flex-col items-stretch gap-1 px-4 pb-5 pt-2 z-40"
+          className="md:hidden bg-gradient-to-b from-blue-700 to-purple-700 dark:from-gray-950 dark:to-gray-900 text-white rounded-b-2xl shadow-lg dark:shadow-gray-900/80 flex flex-col items-stretch gap-1 px-4 pb-5 pt-2 z-40 transition-colors duration-300"
         >
           {navLinks.map((link) => (
             <NavLink
