@@ -51,7 +51,9 @@ export default function Footer() {
                   <i className="fas fa-envelope text-sm" aria-hidden="true"></i>
                 </a>
               )}
-              {socialLinks.map((link) => (
+              {socialLinks
+                .filter(l => !l.url?.toLowerCase().includes('linkedin'))
+                .map((link) => (
                 <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" aria-label={link.label}
                   className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors duration-200">
                   <i className={`${link.icon} ${link.color} text-sm`} aria-hidden="true"></i>
