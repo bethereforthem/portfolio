@@ -7,6 +7,10 @@ const ProfileContext = createContext(null)
 const DEFAULT = {
   ...defaultProfile,
   profileImage: '/images/david2.png',
+  projectsCount: 10,
+  technologiesCount: 20,
+  yearsCoding: 2,
+  certificates: 5,
 }
 
 export function ProfileProvider({ children }) {
@@ -41,6 +45,10 @@ export function ProfileProvider({ children }) {
           welcomeText:    m.welcome_text    || prev.welcomeText,
           cvUrl:          m.cv_url          || prev.cvUrl,
           resumeUrl:      m.resume_url      || prev.resumeUrl,
+          projectsCount:     Number(m.projects_count)     || prev.projectsCount,
+          technologiesCount: Number(m.technologies_count) || prev.technologiesCount,
+          yearsCoding:       Number(m.years_coding)       || prev.yearsCoding,
+          certificates:      Number(m.certificates)       || prev.certificates,
           linkedin: {
             url:   m.linkedin_url   || prev.linkedin.url,
             label: m.linkedin_label || prev.linkedin.label,
