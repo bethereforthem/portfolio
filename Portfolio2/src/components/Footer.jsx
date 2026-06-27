@@ -4,7 +4,10 @@ import { navLinks } from '../data/navLinks'
 
 export default function Footer() {
   const { profileData, socialLinks } = useProfile()
-  const { email, phone, location, linkedin } = profileData
+  const { email, phone, location, linkedin, fullName } = profileData
+  const initials = (fullName || 'David Kayigamba').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+  const firstName = fullName?.split(' ')[0] || 'David'
+  const lastInitial = fullName?.split(' ')[1]?.[0] || 'K'
 
   const year = new Date().getFullYear()
 
@@ -16,9 +19,13 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <img src="/images/logo.png" alt="Logo" className="w-10 h-10 rounded-full" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shrink-0">
+                <span className="text-sm font-black text-gray-900" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                  {initials}
+                </span>
+              </div>
               <span className="text-xl font-bold text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                David K.
+                {firstName} <span className="text-yellow-400">{lastInitial}.</span>
               </span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-5">
