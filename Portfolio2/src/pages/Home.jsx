@@ -301,7 +301,10 @@ export default function Home() {
                     <i className="fas fa-envelope text-sm" aria-hidden="true" />
                   </a>
                 )}
-                {socialLinks.slice(0, 2).map((link) => (
+                {socialLinks
+                  .filter(l => !l.url?.toLowerCase().includes('linkedin'))
+                  .slice(0, 2)
+                  .map((link) => (
                   <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" aria-label={link.label}
                     className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-white/20 dark:hover:bg-white/10 hover:border-gray-400 transition-all duration-200">
                     <i className={`${link.icon} ${link.color} text-sm`} aria-hidden="true" />
