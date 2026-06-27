@@ -22,41 +22,45 @@ export function ProfileProvider({ children }) {
     if (!isSupabaseConfigured) return
 
     async function load() {
-      const [{ data: settings }, { data: links }] = await Promise.all([
-        supabase.from('settings').select('key, value'),
-        supabase.from('social_links').select('*').order('sort_order').order('label'),
-      ])
+      try {
+        const [{ data: settings }, { data: links }] = await Promise.all([
+          supabase.from('settings').select('key, value'),
+          supabase.from('social_links').select('*').order('sort_order').order('label'),
+        ])
 
-      if (settings?.length) {
-        const m = Object.fromEntries(settings.map((r) => [r.key, r.value]))
-        setProfileData((prev) => ({
-          ...prev,
-          fullName:       m.full_name       || prev.fullName,
-          bio:            m.bio             || prev.bio,
-          profileImage:   m.profile_image   || prev.profileImage,
-          phone:          m.phone           || prev.phone,
-          email:          m.email           || prev.email,
-          whatsappLink:   m.whatsapp_link   || prev.whatsappLink,
-          location:       m.location        || prev.location,
-          aboutLocation:  m.about_location  || prev.aboutLocation,
-          contactAddress: m.contact_address || prev.contactAddress,
-          workingHours:   m.working_hours   || prev.workingHours,
-          university:     m.university      || prev.university,
-          welcomeText:    m.welcome_text    || prev.welcomeText,
-          cvUrl:          m.cv_url          || prev.cvUrl,
-          resumeUrl:      m.resume_url      || prev.resumeUrl,
-          projectsCount:     Number(m.projects_count)     || prev.projectsCount,
-          technologiesCount: Number(m.technologies_count) || prev.technologiesCount,
-          yearsCoding:       Number(m.years_coding)       || prev.yearsCoding,
-          certificates:      Number(m.certificates)       || prev.certificates,
-          linkedin: {
-            url:   m.linkedin_url   || prev.linkedin.url,
-            label: m.linkedin_label || prev.linkedin.label,
-          },
-        }))
+        if (settings?.length) {
+          const m = Object.fromEntries(settings.map((r) => [r.key, r.value]))
+          setProfileData((prev) => ({
+            ...prev,
+            fullName:       m.full_name       || prev.fullName,
+            bio:            m.bio             || prev.bio,
+            profileImage:   m.profile_image   || prev.profileImage,
+            phone:          m.phone           || prev.phone,
+            email:          m.email           || prev.email,
+            whatsappLink:   m.whatsapp_link   || prev.whatsappLink,
+            location:       m.location        || prev.location,
+            aboutLocation:  m.about_location  || prev.aboutLocation,
+            contactAddress: m.contact_address || prev.contactAddress,
+            workingHours:   m.working_hours   || prev.workingHours,
+            university:     m.university      || prev.university,
+            welcomeText:    m.welcome_text    || prev.welcomeText,
+            cvUrl:          m.cv_url          || prev.cvUrl,
+            resumeUrl:      m.resume_url      || prev.resumeUrl,
+            projectsCount:     Number(m.projects_count)     || prev.projectsCount,
+            technologiesCount: Number(m.technologies_count) || prev.technologiesCount,
+            yearsCoding:       Number(m.years_coding)       || prev.yearsCoding,
+            certificates:      Number(m.certificates)       || prev.certificates,
+            linkedin: {
+              url:   m.linkedin_url   || prev.linkedin.url,
+              label: m.linkedin_label || prev.linkedin.label,
+            },
+          }))
+        }
+
+        if (links) setSocialLinks(links)
+      } catch {
+        // Supabase unavailable — profile stays at hardcoded defaults, site still works
       }
-
-      if (links) setSocialLinks(links)
     }
     load()
   }, [])
