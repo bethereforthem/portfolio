@@ -33,6 +33,11 @@ export default {
           '0%, 100%': { transform: 'translateY(0)', opacity: '1' },
           '50%':       { transform: 'translateY(10px)', opacity: '0' },
         },
+        drift: {
+          '0%, 100%': { transform: 'translate(0, 0)' },
+          '33%':       { transform: 'translate(25px, -18px)' },
+          '66%':       { transform: 'translate(-12px, 22px)' },
+        },
       },
       animation: {
         float:             'float 3s ease-in-out infinite',
@@ -42,6 +47,8 @@ export default {
         'progress-fill':   'progressFill 1.2s ease-out forwards',
         marquee:           'marquee 30s linear infinite',
         'scroll-dot':      'scroll-dot 1.6s ease-in-out infinite',
+        'drift':           'drift 18s ease-in-out infinite',
+        'drift-slow':      'drift 24s ease-in-out 6s infinite',
       },
     },
   },
