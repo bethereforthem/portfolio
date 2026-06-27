@@ -44,15 +44,23 @@ export default function Header() {
   useClickAway(menuRef, () => setIsOpen(false))
 
   const { profileData } = useProfile()
-  const { name, email, whatsappLink } = profileData
+  const { name, fullName, email, whatsappLink } = profileData
+  const initials = (fullName || name || 'DK').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
 
   return (
     <header className="fixed w-full top-0 left-0 bg-gradient-to-r from-blue-700 to-purple-600 dark:from-gray-950 dark:to-gray-900 text-white pt-[3px] shadow-lg dark:shadow-gray-900/80 z-50 transition-colors duration-300">
       <div className="flex items-center justify-between py-4 px-8">
         {/* Logo */}
-        <div className="flex items-center space-x-4">
-          <img src="/images/logo.png" alt="Logo" className="w-12 h-12 rounded-full shadow-md" />
-          <span className="text-2xl font-bold">{name}</span>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shrink-0 border-2 border-white/20">
+            <span className="text-sm font-black text-gray-900 tracking-tight" style={{ fontFamily: 'Poppins, sans-serif' }}>
+              {initials}
+            </span>
+          </div>
+          <div className="leading-none">
+            <p className="text-base font-bold text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>{name}</p>
+            <p className="text-[10px] font-semibold text-white/60 uppercase tracking-widest">Developer</p>
+          </div>
         </div>
 
         {/* Desktop nav */}
