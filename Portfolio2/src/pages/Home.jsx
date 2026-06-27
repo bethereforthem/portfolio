@@ -76,34 +76,48 @@ function useTerminalLoop(lines, delay = 680) {
 }
 
 // ── Featured projects hook ────────────────────────────────────
+const LOCAL_FALLBACK = localProjects.slice(0, 3).map((p, i) => ({
+  id: i,
+  title: p.title,
+  description: p.description,
+  image: p.image,
+  live_demo: p.link,
+  category: 'Web',
+  technologies: 'HTML, CSS, JavaScript',
+}))
+
 function useFeaturedProjects() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
+
   useEffect(() => {
-    async function load() {
-      if (!isSupabaseConfigured) {
-        setProjects(localProjects.slice(0, 3).map((p, i) => ({
-          id: i,
-          title: p.title,
-          description: p.description,
-          image: p.image,
-          live_demo: p.link,
-          category: 'Web',
-          technologies: 'HTML, CSS, JavaScript',
-        })))
-        setLoading(false)
-        return
-      }
-      const { data } = await supabase
-        .from('projects')
-        .select('id, title, description, technologies, image, live_demo, github_link, category')
-        .order('created_at', { ascending: false })
-        .limit(3)
-      setProjects(data || [])
+    let cancelled = false
+
+    if (!isSupabaseConfigured) {
+      setProjects(LOCAL_FALLBACK)
       setLoading(false)
+      return
     }
+
+    async function load() {
+      try {
+        const { data } = await supabase
+          .from('projects')
+          .select('id, title, description, technologies, image, live_demo, github_link, category')
+          .order('created_at', { ascending: false })
+          .limit(3)
+        if (!cancelled) setProjects(data?.length ? data : LOCAL_FALLBACK)
+      } catch {
+        if (!cancelled) setProjects(LOCAL_FALLBACK)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
     load()
+    return () => { cancelled = true }
   }, [])
+
   return { projects, loading }
 }
 
