@@ -12,6 +12,33 @@ import {
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 
+// ── Page name mapping ─────────────────────────────────────────
+const PAGE_NAMES = {
+  '/':         'Home',
+  '/about':    'About',
+  '/skills':   'Skills',
+  '/projects': 'Projects',
+  '/contact':  'Contact',
+}
+function getPageName(path) {
+  return PAGE_NAMES[path] || path
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+const RANGE_OPTIONS = [
+  { label: '7 days',  value: 7   },
+  { label: '30 days', value: 30  },
+  { label: '90 days', value: 90  },
+  { label: '1 year',  value: 365 },
+]
+
 // ── Country bar (CSS, no extra dep) ──────────────────────────
 function CountryBar({ country, count, max, index }) {
   const pct = max > 0 ? Math.max(4, (count / max) * 100) : 4
@@ -26,7 +53,6 @@ function CountryBar({ country, count, max, index }) {
     'from-orange-500 to-orange-600',
   ]
   const color = colors[index % colors.length]
-
   return (
     <div className="flex items-center gap-3">
       <span className="text-xs font-semibold text-gray-500 w-4 text-right">{index + 1}</span>
@@ -102,7 +128,10 @@ function PageTable({ data, loading }) {
         <tbody className="divide-y divide-gray-50">
           {data.map(({ page, count, total }) => (
             <tr key={page} className="hover:bg-gray-50">
-              <td className="py-2 font-medium text-gray-700">{page}</td>
+              <td className="py-2">
+                <span className="font-medium text-gray-700">{getPageName(page)}</span>
+                <span className="text-gray-400 text-xs ml-2">{page}</span>
+              </td>
               <td className="py-2 text-right text-gray-600">{count}</td>
               <td className="py-2 text-right">
                 <span className="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full">
@@ -130,6 +159,15 @@ export default function AdminDashboard() {
   const [pageData, setPageData] = useState([])
   const [visitLoading, setVisitLoading] = useState(true)
 
+  // Audit log state
+  const [logData, setLogData] = useState([])
+  const [logTotal, setLogTotal] = useState(0)
+  const [logPage, setLogPage] = useState(0)
+  const [logRange, setLogRange] = useState(365)
+  const [logLoading, setLogLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
+  const LOG_SIZE = 20
+
   // Content stats
   useEffect(() => {
     async function fetchContent() {
@@ -148,8 +186,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchVisits() {
       const now = new Date()
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-      const startOfWeek  = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString()
+      const startOfMonth  = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+      const startOfWeek   = new Date(now - 7  * 24 * 60 * 60 * 1000).toISOString()
       const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString()
 
       const [
@@ -207,7 +245,7 @@ export default function AdminDashboard() {
       )
 
       setVisitStats({
-        total:     total    ?? 0,
+        total:     total     ?? 0,
         thisMonth: thisMonth ?? 0,
         thisWeek:  thisWeek  ?? 0,
         countries: Object.keys(cCounts).length,
@@ -217,7 +255,87 @@ export default function AdminDashboard() {
     fetchVisits()
   }, [])
 
-  const countryMax = countryData[0]?.count ?? 1
+  // Audit log (paginated)
+  useEffect(() => {
+    let cancelled = false
+    async function fetchLog() {
+      setLogLoading(true)
+      const cutoff = new Date(Date.now() - logRange * 24 * 60 * 60 * 1000).toISOString()
+      const from = logPage * LOG_SIZE
+      const to = from + LOG_SIZE - 1
+      const { data, count } = await supabase
+        .from('visits')
+        .select('visited_at, page, country, city', { count: 'exact' })
+        .gte('visited_at', cutoff)
+        .order('visited_at', { ascending: false })
+        .range(from, to)
+      if (!cancelled) {
+        setLogData(data ?? [])
+        setLogTotal(count ?? 0)
+        setLogLoading(false)
+      }
+    }
+    fetchLog()
+    return () => { cancelled = true }
+  }, [logPage, logRange])
+
+  async function downloadPDF() {
+    setDownloading(true)
+    const cutoff = new Date(Date.now() - logRange * 24 * 60 * 60 * 1000)
+    const { data } = await supabase
+      .from('visits')
+      .select('visited_at, page, country, city')
+      .gte('visited_at', cutoff.toISOString())
+      .order('visited_at', { ascending: false })
+      .limit(1000)
+    setDownloading(false)
+
+    const rangeLabel = RANGE_OPTIONS.find(o => o.value === logRange)?.label || `${logRange} days`
+    const rows = (data ?? []).map(v => `
+      <tr>
+        <td>${fmtDate(v.visited_at)}</td>
+        <td>${getPageName(v.page)}<small> ${v.page}</small></td>
+        <td>${v.country || '—'}</td>
+        <td>${v.city || '—'}</td>
+      </tr>`).join('')
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Visit History — Portfolio Analytics</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 40px; color: #111; font-size: 13px; }
+    h1 { font-size: 22px; font-weight: bold; margin: 0 0 4px; }
+    .meta { color: #6b7280; font-size: 12px; margin: 0 0 24px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #1e40af; color: #fff; padding: 9px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+    tbody td { padding: 7px 12px; border-bottom: 1px solid #e5e7eb; }
+    tbody tr:nth-child(even) td { background: #f8fafc; }
+    small { color: #9ca3af; margin-left: 6px; }
+    @media print { body { margin: 20px; } }
+  </style>
+</head>
+<body>
+  <h1>Visit History — Portfolio Analytics</h1>
+  <p class="meta">Period: Last ${rangeLabel} (since ${cutoff.toDateString()}) &nbsp;·&nbsp; Records shown: ${(data ?? []).length}</p>
+  <table>
+    <thead><tr><th>Date &amp; Time</th><th>Page</th><th>Country</th><th>City</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="4" style="text-align:center;padding:20px;color:#9ca3af;">No visits in this period</td></tr>'}</tbody>
+  </table>
+</body>
+</html>`
+
+    const win = window.open('', '_blank', 'noopener,noreferrer')
+    if (win) {
+      win.document.write(html)
+      win.document.close()
+      setTimeout(() => win.print(), 400)
+    }
+  }
+
+  const countryMax   = countryData[0]?.count ?? 1
+  const logTotalPages = Math.ceil(logTotal / LOG_SIZE)
 
   return (
     <div className="space-y-8 pb-8">
@@ -236,10 +354,10 @@ export default function AdminDashboard() {
           <i className="fas fa-chart-line mr-1.5"></i>Visitor Analytics
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total Visits"   value={visitStats.total}     icon="fas fa-eye"          gradient="from-blue-500 to-blue-700"    loading={visitLoading} />
-          <StatCard label="This Month"     value={visitStats.thisMonth}  icon="fas fa-calendar-alt" gradient="from-purple-500 to-purple-700" loading={visitLoading} />
-          <StatCard label="Last 7 Days"    value={visitStats.thisWeek}   icon="fas fa-calendar-week"gradient="from-green-500 to-green-700"   loading={visitLoading} />
-          <StatCard label="Countries"      value={visitStats.countries}  icon="fas fa-globe"        gradient="from-orange-400 to-orange-600" loading={visitLoading} />
+          <StatCard label="Total Visits"  value={visitStats.total}     icon="fas fa-eye"           gradient="from-blue-500 to-blue-700"    loading={visitLoading} />
+          <StatCard label="This Month"    value={visitStats.thisMonth}  icon="fas fa-calendar-alt"  gradient="from-purple-500 to-purple-700" loading={visitLoading} />
+          <StatCard label="Last 7 Days"   value={visitStats.thisWeek}   icon="fas fa-calendar-week" gradient="from-green-500 to-green-700"   loading={visitLoading} />
+          <StatCard label="Countries"     value={visitStats.countries}  icon="fas fa-globe"         gradient="from-orange-400 to-orange-600" loading={visitLoading} />
         </div>
       </section>
 
@@ -260,27 +378,10 @@ export default function AdminDashboard() {
           <ResponsiveContainer width="100%" height={210}>
             <LineChart data={dailyData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10, fill: '#9ca3af' }}
-                tickLine={false}
-                interval={4}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: '#9ca3af' }}
-                tickLine={false}
-                axisLine={false}
-                allowDecimals={false}
-              />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} interval={4} />
+              <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} allowDecimals={false} />
               <Tooltip content={<ChartTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="visits"
-                stroke="url(#lineGrad)"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{ r: 5, fill: '#3b82f6', strokeWidth: 0 }}
-              />
+              <Line type="monotone" dataKey="visits" stroke="url(#lineGrad)" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#3b82f6', strokeWidth: 0 }} />
               <defs>
                 <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="#3b82f6" />
@@ -334,6 +435,113 @@ export default function AdminDashboard() {
           </div>
           <PageTable data={pageData} loading={visitLoading} />
         </div>
+      </div>
+
+      {/* ── Audit Log ── */}
+      <div className="bg-white rounded-xl shadow p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
+          <div className="flex items-center gap-2">
+            <i className="fas fa-history text-indigo-500"></i>
+            <div>
+              <h3 className="font-bold text-gray-800">Visit Audit Log</h3>
+              <p className="text-xs text-gray-400">
+                {logLoading ? '…' : `${logTotal.toLocaleString()} visit${logTotal !== 1 ? 's' : ''} in this period`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Range selector */}
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+              {RANGE_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setLogRange(opt.value); setLogPage(0) }}
+                  className={`px-3 py-1.5 font-semibold transition ${logRange === opt.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Download PDF */}
+            <button
+              onClick={downloadPDF}
+              disabled={downloading || logTotal === 0}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition"
+            >
+              {downloading
+                ? <div className="w-3 h-3 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                : <i className="fas fa-file-pdf"></i>
+              }
+              Download PDF
+            </button>
+          </div>
+        </div>
+
+        {logLoading ? (
+          <div className="space-y-2">
+            {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+          </div>
+        ) : logData.length === 0 ? (
+          <div className="text-center py-10">
+            <i className="fas fa-history text-gray-300 text-4xl mb-3 block"></i>
+            <p className="text-gray-400 text-sm">No visits recorded in this period.</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto rounded-lg border border-gray-100">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                    <th className="px-4 py-3">Date &amp; Time</th>
+                    <th className="px-4 py-3">Page</th>
+                    <th className="px-4 py-3">Country</th>
+                    <th className="px-4 py-3">City</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {logData.map((row, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap text-xs">{fmtDate(row.visited_at)}</td>
+                      <td className="px-4 py-2.5">
+                        <span className="font-medium text-gray-700">{getPageName(row.page)}</span>
+                        <span className="text-gray-400 text-xs ml-1.5">{row.page}</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-600">{row.country || <span className="text-gray-300">—</span>}</td>
+                      <td className="px-4 py-2.5 text-gray-600">{row.city || <span className="text-gray-300">—</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {logTotalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 text-sm">
+                <p className="text-gray-400 text-xs">
+                  Page {logPage + 1} of {logTotalPages} · {logTotal.toLocaleString()} records
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setLogPage(p => Math.max(0, p - 1))}
+                    disabled={logPage === 0}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  >
+                    <i className="fas fa-chevron-left text-[10px] mr-1"></i>Prev
+                  </button>
+                  <button
+                    onClick={() => setLogPage(p => Math.min(logTotalPages - 1, p + 1))}
+                    disabled={logPage >= logTotalPages - 1}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  >
+                    Next<i className="fas fa-chevron-right text-[10px] ml-1"></i>
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* ── Content stats ── */}
