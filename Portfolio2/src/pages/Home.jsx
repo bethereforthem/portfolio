@@ -566,19 +566,17 @@ export default function Home() {
                       </p>
                       {project.technologies && (
                         <div className="flex flex-wrap gap-1.5">
-                          {project.technologies
-                            .split(',')
-                            .slice(0, 3)
-                            .map((t) => t.trim())
-                            .filter(Boolean)
-                            .map((tag) => (
-                              <span
-                                key={tag}
-                                className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium"
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                          {(Array.isArray(project.technologies)
+                            ? project.technologies
+                            : String(project.technologies).split(',')
+                          ).slice(0, 3).map((t) => t.trim()).filter(Boolean).map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium"
+                            >
+                              {tag}
+                            </span>
+                          ))}
                         </div>
                       )}
                       <div className="flex gap-4 pt-1">
