@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useProfile } from '../contexts/ProfileContext'
 import { navLinks } from '../data/navLinks'
@@ -10,6 +11,38 @@ export default function Footer() {
   const lastInitial = fullName?.split(' ')[1]?.[0] || 'K'
 
   const year = new Date().getFullYear()
+
+  const [subEmail, setSubEmail] = useState('')
+  const [subStatus, setSubStatus] = useState('idle') // 'idle' | 'loading' | 'success' | 'error'
+  const [subMessage, setSubMessage] = useState('')
+
+  async function handleSubscribe(e) {
+    e.preventDefault()
+    const trimmed = subEmail.trim()
+    if (!trimmed) return
+
+    setSubStatus('loading')
+    setSubMessage('')
+    try {
+      const res = await fetch('/.netlify/functions/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setSubStatus('success')
+        setSubMessage("You're subscribed! Thanks for joining.")
+        setSubEmail('')
+      } else {
+        setSubStatus('error')
+        setSubMessage(data.error || 'Something went wrong. Please try again.')
+      }
+    } catch {
+      setSubStatus('error')
+      setSubMessage('Network error. Please check your connection.')
+    }
+  }
 
   return (
     <footer className="bg-gray-900 dark:bg-gray-950 text-gray-300 pt-12 pb-6">
@@ -109,24 +142,52 @@ export default function Footer() {
           <div>
             <h2 className="text-sm font-bold uppercase tracking-widest text-yellow-400 mb-4">Stay Updated</h2>
             <p className="text-sm text-gray-400 mb-4">Get notified when I publish new projects or write about tech.</p>
-            <form
-              className="flex flex-col gap-2"
-              onSubmit={(e) => e.preventDefault()}
-              aria-label="Newsletter subscription"
-            >
-              <input
-                type="email"
-                placeholder="your@email.com"
-                aria-label="Email address for newsletter"
-                className="px-3 py-2.5 rounded-lg bg-white/10 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/50 focus:border-yellow-400/50 transition"
-              />
-              <button
-                type="submit"
-                className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 py-2.5 rounded-lg font-bold text-sm transition-colors duration-200"
+
+            {subStatus === 'success' ? (
+              <div className="flex items-start gap-3 bg-emerald-900/40 border border-emerald-700/50 rounded-xl px-4 py-3.5">
+                <i className="fas fa-check-circle text-emerald-400 mt-0.5 shrink-0" aria-hidden="true"></i>
+                <p className="text-sm text-emerald-300 font-medium">{subMessage}</p>
+              </div>
+            ) : (
+              <form
+                className="flex flex-col gap-2"
+                onSubmit={handleSubscribe}
+                aria-label="Newsletter subscription"
               >
-                Subscribe <i className="fas fa-paper-plane ml-1.5" aria-hidden="true"></i>
-              </button>
-            </form>
+                <input
+                  type="email"
+                  value={subEmail}
+                  onChange={e => { setSubEmail(e.target.value); if (subStatus === 'error') setSubStatus('idle') }}
+                  placeholder="your@email.com"
+                  aria-label="Email address for newsletter"
+                  required
+                  disabled={subStatus === 'loading'}
+                  className="px-3 py-2.5 rounded-lg bg-white/10 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/50 focus:border-yellow-400/50 transition disabled:opacity-50"
+                />
+                {subStatus === 'error' && (
+                  <p className="text-xs text-red-400 flex items-center gap-1.5">
+                    <i className="fas fa-exclamation-circle" aria-hidden="true"></i>
+                    {subMessage}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={subStatus === 'loading'}
+                  className="bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 disabled:cursor-not-allowed text-gray-900 py-2.5 rounded-lg font-bold text-sm transition-colors duration-200 flex items-center justify-center gap-2"
+                >
+                  {subStatus === 'loading' ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
+                      Subscribing…
+                    </>
+                  ) : (
+                    <>
+                      Subscribe <i className="fas fa-paper-plane" aria-hidden="true"></i>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
           </div>
         </div>
 
