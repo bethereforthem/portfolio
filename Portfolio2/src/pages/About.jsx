@@ -112,7 +112,9 @@ export default function About() {
                 </a>
               </div>
             )}
-            {socialLinks.map((link) => (
+            {socialLinks
+              .filter(l => !l.url?.toLowerCase().includes('linkedin'))
+              .map((link) => (
               <div key={link.id} className="flex items-center gap-3">
                 <i className={`${link.icon} ${link.color} w-5 text-center`} aria-hidden="true"></i>
                 <a href={link.url} target="_blank" rel="noopener noreferrer"
