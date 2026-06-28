@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import ThemeToggle from './ThemeToggle'
 import { useProfile } from '../contexts/ProfileContext'
 import { navLinks } from '../data/navLinks'
@@ -19,7 +19,7 @@ function useClickAway(ref, onAway) {
 function desktopLinkClass({ isActive }) {
   const base = 'relative flex items-center gap-1.5 px-1 py-0.5 transition-all duration-200'
   if (isActive) {
-    return `${base} text-yellow-300 font-bold after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2px] after:rounded-full after:bg-yellow-300`
+    return `${base} text-yellow-300 font-bold`
   }
   return `${base} text-white/90 hover:text-yellow-300`
 }
@@ -36,9 +36,12 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [contactOpen, setContactOpen] = useState(false)
   const [mobileContactOpen, setMobileContactOpen] = useState(false)
+  const [indicator, setIndicator] = useState({ left: 0, width: 0, show: false })
 
   const contactRef = useRef(null)
   const menuRef = useRef(null)
+  const navRef = useRef(null)
+  const linkRefs = useRef([])
 
   useClickAway(contactRef, () => setContactOpen(false))
   useClickAway(menuRef, () => setIsOpen(false))
@@ -46,6 +49,32 @@ export default function Header() {
   const { profileData } = useProfile()
   const { name, fullName, email, whatsappLink } = profileData
   const initials = (fullName || name || 'DK').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+
+  const { pathname } = useLocation()
+  const activeIndex = navLinks.findIndex(l =>
+    l.path === '/' ? pathname === '/' : pathname.startsWith(l.path)
+  )
+
+  useEffect(() => {
+    function measure() {
+      const nav = navRef.current
+      const el = linkRefs.current[activeIndex]
+      if (!nav || !el || activeIndex < 0) {
+        setIndicator(prev => ({ ...prev, show: false }))
+        return
+      }
+      const nr = nav.getBoundingClientRect()
+      const lr = el.getBoundingClientRect()
+      setIndicator({ left: lr.left - nr.left, width: lr.width, show: true })
+    }
+    measure()
+    const t = setTimeout(measure, 60)
+    window.addEventListener('resize', measure)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('resize', measure)
+    }
+  }, [activeIndex])
 
   return (
     <header className="fixed w-full top-0 left-0 bg-gradient-to-r from-blue-700 to-purple-600 dark:from-gray-950 dark:to-gray-900 text-white pt-[3px] shadow-lg dark:shadow-gray-900/80 z-50 transition-colors duration-300">
@@ -63,19 +92,31 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Desktop nav */}
-        <nav className="hidden md:flex space-x-6 text-lg font-semibold">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.path}
-              to={link.path}
-              end={link.path === '/'}
-              className={desktopLinkClass}
-            >
-              <i className={link.headerIcon}></i>
-              {link.label}
-            </NavLink>
+        {/* Desktop nav with sliding indicator */}
+        <nav ref={navRef} className="hidden md:flex space-x-6 text-lg font-semibold relative pb-1.5">
+          {navLinks.map((link, i) => (
+            <span key={link.path} ref={el => { linkRefs.current[i] = el }}>
+              <NavLink
+                to={link.path}
+                end={link.path === '/'}
+                className={desktopLinkClass}
+              >
+                <i className={link.headerIcon}></i>
+                {link.label}
+              </NavLink>
+            </span>
           ))}
+          {indicator.show && (
+            <div
+              aria-hidden="true"
+              className="absolute bottom-0 h-[3px] bg-yellow-300 rounded-full pointer-events-none"
+              style={{
+                left: indicator.left,
+                width: indicator.width,
+                transition: 'left 0.45s cubic-bezier(0.4,0,0.2,1), width 0.45s cubic-bezier(0.4,0,0.2,1)',
+              }}
+            />
+          )}
         </nav>
 
         {/* Dark mode toggle (desktop) */}
