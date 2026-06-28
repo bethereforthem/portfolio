@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Reveal from '../components/Reveal'
 import { useProfile } from '../contexts/ProfileContext'
@@ -56,25 +56,6 @@ function AnimatedCounter({ target, suffix = '+', duration = 1800 }) {
   return <span ref={ref} className="tabular-nums">{count}{suffix}</span>
 }
 
-// ── Terminal animation loop ───────────────────────────────────
-const TERMINAL_LINES = [
-  [{ t: '> ', c: 'text-gray-500' }, { t: 'Initializing portfolio', c: 'text-gray-300' }, { t: '...', c: 'text-gray-600' }],
-  [{ t: 'const ', c: 'text-purple-400' }, { t: 'dev', c: 'text-yellow-300' }, { t: ' = new ', c: 'text-purple-400' }, { t: 'Developer()', c: 'text-blue-400' }],
-  [{ t: 'dev.', c: 'text-yellow-300' }, { t: 'skills', c: 'text-pink-400' }, { t: ' = ', c: 'text-white/70' }, { t: "['React', 'Node.js', 'Python']", c: 'text-orange-300' }],
-  [{ t: '> ', c: 'text-gray-500' }, { t: 'Running tests', c: 'text-gray-300' }, { t: ' ✓ all passed', c: 'text-green-400' }],
-  [{ t: 'dev.', c: 'text-yellow-300' }, { t: 'deploy()', c: 'text-blue-400' }, { t: '  // 🚀 shipped!', c: 'text-gray-600' }],
-  [{ t: '> ', c: 'text-gray-500' }, { t: 'Ready to collaborate!', c: 'text-emerald-400' }],
-]
-
-function useTerminalLoop(lines, delay = 680) {
-  const [tick, setTick] = useState(0)
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => (t + 1) % (lines.length + 4)), delay)
-    return () => clearInterval(id)
-  }, [lines.length, delay])
-  return Math.min(tick, lines.length)
-}
-
 // ── Featured projects hook ────────────────────────────────────
 const LOCAL_FALLBACK = localProjects.slice(0, 3).map((p, i) => ({
   id: i,
@@ -120,6 +101,49 @@ function useFeaturedProjects() {
 
   return { projects, loading }
 }
+
+// ── Hero slides data ──────────────────────────────────────────
+const SLIDE_DURATION = 6000
+
+const SLIDES = [
+  {
+    bgColor: '#0a0a1a',
+    eyebrow: "Hello, I'm",
+    showName: true,
+    showRole: true,
+    sub: 'Software developer from Rwanda — I turn ideas into production-ready digital products with React, Node.js, Python, and modern DevOps tools.',
+    chips: ['React.js', 'Node.js', 'Python', 'Docker'],
+    accent: 'from-blue-400 via-violet-400 to-purple-400',
+    ctas: [
+      { to: '/projects', label: 'View My Work', icon: 'fas fa-arrow-right' },
+      { to: '/contact',  label: 'Hire Me',      icon: 'fas fa-paper-plane' },
+    ],
+  },
+  {
+    bgColor: '#011a10',
+    eyebrow: 'My Passion',
+    headline: ['Code That', 'Changes Lives'],
+    sub: 'I believe software is the most powerful tool of our generation. Every project I take on is driven by purpose — building systems that empower people and solve real-world problems.',
+    chips: ['Problem Solver', 'Lifelong Learner', 'User-First Design'],
+    accent: 'from-emerald-400 via-teal-400 to-cyan-400',
+    ctas: [
+      { to: '/about',  label: 'My Story',  icon: 'fas fa-user' },
+      { to: '/skills', label: 'My Skills', icon: 'fas fa-code' },
+    ],
+  },
+  {
+    bgColor: '#120a2e',
+    eyebrow: 'What I Build',
+    headline: ['Full Stack', 'Solutions'],
+    sub: 'From pixel-perfect frontends to robust REST APIs and containerised deployments — I architect and ship the complete product, end to end. Driven by 3+ years of dedicated learning and real-world projects.',
+    chips: ['Frontend', 'Backend', 'DevOps', 'Databases'],
+    accent: 'from-violet-400 via-purple-400 to-pink-400',
+    ctas: [
+      { to: '/projects', label: 'See Projects', icon: 'fas fa-laptop-code' },
+      { to: '/skills',   label: 'Tech Stack',   icon: 'fas fa-layer-group' },
+    ],
+  },
+]
 
 // ── Static data ───────────────────────────────────────────────
 const SERVICES = [
@@ -173,13 +197,37 @@ export default function Home() {
   } = profileData
   const firstName = fullName?.split(' ')[0] || 'David'
   const lastName  = fullName?.split(' ').slice(1).join(' ') || 'Kayigamba'
-  const role = useTyping(ROLES)
-  const terminalCount = useTerminalLoop(TERMINAL_LINES)
+
   const { projects: featuredProjects, loading: featuredLoading } = useFeaturedProjects()
 
+  // ── Hero carousel state ───────────────────────────────────────
+  const [slide, setSlide] = useState(0)
+  const [slideKey, setSlideKey] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const intervalRef = useRef(null)
+
+  const goToSlide = useCallback((i) => {
+    setSlide(i)
+    setSlideKey(k => k + 1)
+  }, [])
+
+  useEffect(() => {
+    if (paused) return
+    intervalRef.current = setInterval(() => {
+      setSlide(s => {
+        const next = (s + 1) % SLIDES.length
+        setSlideKey(k => k + 1)
+        return next
+      })
+    }, SLIDE_DURATION)
+    return () => clearInterval(intervalRef.current)
+  }, [paused])
+
+  const s = SLIDES[slide]
+
   const STATS = [
-    { label: 'Projects Built',  value: projectsCount    || 10, suffix: '+' },
-    { label: 'Technologies',    value: technologiesCount || 20, suffix: '+' },
+    { label: 'Projects Built',  value: projectsCount    || 0,  suffix: '+' },
+    { label: 'Technologies',    value: technologiesCount || 0,  suffix: '+' },
     { label: 'Years Coding',    value: yearsCoding       || 2,  suffix: '+' },
     { label: 'Certificates',    value: certificates      || 5,  suffix: ''  },
   ]
@@ -187,211 +235,230 @@ export default function Home() {
   return (
     <>
       {/* ════════════════════════════════════════════════════════
-          HERO
+          HERO — full-bleed immersive carousel
       ════════════════════════════════════════════════════════ */}
       <section
-        className="relative min-h-screen flex flex-col justify-center overflow-hidden bg-white dark:bg-gray-950 pt-20"
+        className="relative min-h-screen overflow-hidden"
+        style={{ backgroundColor: s.bgColor, transition: 'background-color 0.9s ease' }}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
         aria-label="Introduction"
       >
-        {/* Dot-grid background */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 pointer-events-none opacity-50 dark:opacity-30"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgb(99 102 241 / 0.18) 1px, transparent 0)',
-            backgroundSize: '32px 32px',
-          }}
-        />
-
-        {/* Animated ambient blobs */}
-        <div aria-hidden="true" className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-[700px] h-[700px] bg-blue-500/8 dark:bg-blue-500/5 rounded-full blur-3xl animate-drift" />
-          <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-purple-500/8 dark:bg-purple-500/5 rounded-full blur-3xl animate-drift-slow" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-indigo-500/5 dark:bg-indigo-500/3 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
+        {/* ── Profile image — full bleed background ── */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src={profileImage || '/images/david2.png'}
+            alt=""
+            aria-hidden="true"
+            className="w-full h-full object-cover object-top"
+          />
         </div>
 
-        <div className="container mx-auto px-6 lg:px-12 py-16 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-14 xl:gap-20 items-center">
+        {/* ── Per-slide gradient overlays (fade in/out) ── */}
+        {SLIDES.map((sl, i) => (
+          <div
+            key={i}
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
+            style={{
+              opacity: i === slide ? 1 : 0,
+              background: `linear-gradient(to right, ${sl.bgColor} 0%, ${sl.bgColor}f0 25%, ${sl.bgColor}cc 45%, ${sl.bgColor}77 65%, ${sl.bgColor}22 80%, transparent 100%)`,
+            }}
+          />
+        ))}
 
-            {/* ── TEXT COLUMN ── */}
-            <div className="order-2 lg:order-1 space-y-7">
+        {/* ── Top vignette (header area) ── */}
+        <div aria-hidden="true" className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
+        {/* ── Bottom vignette (controls area) ── */}
+        <div aria-hidden="true" className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
 
-              {/* Availability pill */}
-              <div className="inline-flex items-center gap-2.5 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 rounded-full px-4 py-1.5 text-sm font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
-                Available for work
-              </div>
+        {/* ── Slide content ── */}
+        <div className="relative z-10 min-h-screen flex flex-col justify-center container mx-auto px-6 lg:px-14 pt-28 pb-36">
+          <div key={slideKey} className="max-w-xl space-y-5">
 
-              {/* Headline */}
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.3em] text-blue-500 dark:text-blue-400 mb-3">
-                  Hello, I'm
-                </p>
-                <h1
-                  className="text-5xl sm:text-6xl xl:text-[4.5rem] font-black leading-[1.04] tracking-tight text-gray-900 dark:text-white"
-                  style={{ fontFamily: 'Poppins, sans-serif' }}
-                >
-                  {firstName}
-                  <br />
-                  <span className="relative inline-block">
-                    <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
-                      {lastName}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="absolute -bottom-1 left-0 w-full h-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"
-                    />
-                  </span>
-                </h1>
-              </div>
+            {/* Eyebrow */}
+            <p
+              className="text-xs font-bold uppercase tracking-[0.35em] text-white/60 animate-fade-in-up"
+              style={{ animationDelay: '0ms' }}
+            >
+              {s.eyebrow}
+            </p>
 
-              {/* Role typewriter */}
-              <div
-                className="flex items-center gap-3 text-lg md:text-xl text-gray-500 dark:text-gray-400 font-medium h-7"
-                aria-live="polite"
-                aria-atomic="true"
+            {/* Headline */}
+            {s.showName ? (
+              <h1
+                className="text-5xl sm:text-6xl xl:text-[5.5rem] font-black leading-[1.04] text-white animate-fade-in-up"
+                style={{ fontFamily: 'Poppins, sans-serif', animationDelay: '60ms' }}
               >
-                <span className="shrink-0 w-7 h-0.5 rounded-full bg-blue-500" aria-hidden="true" />
-                <span className="cursor-blink">{role}</span>
+                {firstName}
+                <br />
+                <span className={`bg-gradient-to-r ${s.accent} bg-clip-text text-transparent`}>
+                  {lastName}
+                </span>
+              </h1>
+            ) : (
+              <h1
+                className="text-5xl sm:text-6xl xl:text-[5.5rem] font-black leading-[1.04] text-white animate-fade-in-up"
+                style={{ fontFamily: 'Poppins, sans-serif', animationDelay: '60ms' }}
+              >
+                {s.headline[0]}
+                <br />
+                <span className={`bg-gradient-to-r ${s.accent} bg-clip-text text-transparent`}>
+                  {s.headline[1]}
+                </span>
+              </h1>
+            )}
+
+            {/* Professional role display (slide 1 only) */}
+            {s.showRole && (
+              <div
+                className="flex items-stretch gap-3.5 animate-fade-in-up"
+                style={{ animationDelay: '110ms' }}
+              >
+                {/* Vertical gradient accent bar */}
+                <div className={`w-[3px] rounded-full bg-gradient-to-b ${s.accent} shrink-0`} aria-hidden="true" />
+                <div className="flex flex-col gap-1">
+                  <span
+                    className="text-xl md:text-2xl font-black text-white tracking-tight leading-none"
+                    style={{ fontFamily: 'Poppins, sans-serif' }}
+                  >
+                    Software Engineer
+                  </span>
+                  <span className="text-[11px] font-bold text-white/45 uppercase tracking-[0.22em]">
+                    Full Stack Developer · React Specialist
+                  </span>
+                </div>
               </div>
+            )}
 
-              {/* Bio */}
-              <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg leading-relaxed max-w-[480px]">
-                {welcomeText?.slice(0, 200) ||
-                  'Passionate about crafting clean, scalable web experiences — turning ideas into products that users love.'}
-                {welcomeText?.length > 200 && '…'}
-              </p>
+            {/* Sub text */}
+            <p
+              className="text-white/75 text-base md:text-lg leading-relaxed animate-fade-in-up"
+              style={{ animationDelay: '150ms' }}
+            >
+              {s.sub}
+            </p>
 
-              {/* CTA buttons */}
-              <div className="flex flex-wrap gap-4 pt-1">
-                <Link
-                  to="/projects"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-violet-600 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.03] transition-all duration-300"
+            {/* Skill chips */}
+            <div
+              className="flex flex-wrap gap-2 animate-fade-in-up"
+              style={{ animationDelay: '200ms' }}
+            >
+              {s.chips.map((chip) => (
+                <span
+                  key={chip}
+                  className="px-3.5 py-1 bg-white/10 border border-white/20 text-white/90 text-xs font-semibold rounded-full backdrop-blur-sm"
                 >
-                  View My Work
-                  <i className="fas fa-arrow-right text-sm" aria-hidden="true" />
-                </Link>
-                <Link
-                  to="/contact"
-                  className="inline-flex items-center gap-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold px-8 py-3.5 rounded-xl hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
-                >
-                  Hire Me
-                  <i className="fas fa-paper-plane text-sm" aria-hidden="true" />
-                </Link>
-              </div>
+                  {chip}
+                </span>
+              ))}
+            </div>
 
-              {/* Social row */}
-              <div className="flex items-center gap-3 pt-1">
-                <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mr-1">Follow</span>
+            {/* CTA buttons */}
+            <div
+              className="flex flex-wrap gap-4 pt-1 animate-fade-in-up"
+              style={{ animationDelay: '260ms' }}
+            >
+              <Link
+                to={s.ctas[0].to}
+                className={`inline-flex items-center gap-2 bg-gradient-to-r ${s.accent} text-gray-950 font-black px-8 py-3.5 rounded-xl shadow-lg hover:scale-[1.04] hover:shadow-2xl transition-all duration-300`}
+              >
+                {s.ctas[0].label}
+                <i className={`${s.ctas[0].icon} text-sm`} aria-hidden="true" />
+              </Link>
+              <Link
+                to={s.ctas[1].to}
+                className="inline-flex items-center gap-2 bg-white/10 border border-white/30 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-white/20 backdrop-blur-sm transition-all duration-300"
+              >
+                {s.ctas[1].label}
+                <i className={`${s.ctas[1].icon} text-sm`} aria-hidden="true" />
+              </Link>
+            </div>
+
+            {/* Social icons (slide 1 only) */}
+            {s.showName && (
+              <div
+                className="flex items-center gap-3 pt-1 animate-fade-in-up"
+                style={{ animationDelay: '320ms' }}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 mr-1">Follow</span>
                 {linkedin?.url && (
                   <a href={linkedin.url} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"
-                    className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-200">
+                    className="w-9 h-9 rounded-lg border border-white/20 flex items-center justify-center text-white/60 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-200">
                     <i className="fab fa-linkedin text-sm" aria-hidden="true" />
                   </a>
                 )}
                 {whatsappLink && (
                   <a href={whatsappLink} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"
-                    className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-green-500 hover:text-white hover:border-green-500 transition-all duration-200">
+                    className="w-9 h-9 rounded-lg border border-white/20 flex items-center justify-center text-white/60 hover:bg-green-500 hover:text-white hover:border-green-500 transition-all duration-200">
                     <i className="fab fa-whatsapp text-sm" aria-hidden="true" />
                   </a>
                 )}
                 {email && (
                   <a href={`mailto:${email}`} aria-label="Email"
-                    className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-200">
+                    className="w-9 h-9 rounded-lg border border-white/20 flex items-center justify-center text-white/60 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-200">
                     <i className="fas fa-envelope text-sm" aria-hidden="true" />
                   </a>
                 )}
-                {socialLinks
-                  .filter(l => !l.url?.toLowerCase().includes('linkedin'))
-                  .slice(0, 2)
-                  .map((link) => (
+                {socialLinks.filter(l => !l.url?.toLowerCase().includes('linkedin')).slice(0, 2).map((link) => (
                   <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" aria-label={link.label}
-                    className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-white/20 dark:hover:bg-white/10 hover:border-gray-400 transition-all duration-200">
-                    <i className={`${link.icon} ${link.color} text-sm`} aria-hidden="true" />
+                    className="w-9 h-9 rounded-lg border border-white/20 flex items-center justify-center text-white/60 hover:bg-white/20 transition-all duration-200">
+                    <i className={`${link.icon} text-sm`} aria-hidden="true" />
                   </a>
                 ))}
               </div>
-            </div>
-
-            {/* ── IMAGE COLUMN ── */}
-            <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
-              <div className="relative">
-                {/* Glow */}
-                <div aria-hidden="true" className="absolute inset-6 bg-gradient-to-br from-blue-500 to-violet-600 rounded-3xl blur-3xl opacity-20 dark:opacity-15" />
-
-                {/* Gradient border frame */}
-                <div className="relative p-[3px] rounded-3xl bg-gradient-to-br from-blue-500 via-violet-500 to-pink-500 shadow-2xl">
-                  <div className="rounded-[22px] overflow-hidden bg-gray-100 dark:bg-gray-900">
-                    <img
-                      src={profileImage || '/images/david2.png'}
-                      alt={`${fullName} — Software Developer`}
-                      className="w-64 h-72 sm:w-80 sm:h-96 md:w-96 md:h-[440px] object-cover"
-                      onError={(e) => { e.target.src = '/images/david2.png' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Experience card */}
-                <div className="absolute -bottom-5 -left-6 bg-white dark:bg-gray-900 shadow-2xl shadow-black/10 dark:shadow-black/40 rounded-2xl px-5 py-3.5 flex items-center gap-3.5 border border-gray-100 dark:border-gray-800">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center shrink-0">
-                    <i className="fas fa-code text-white" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white leading-none" style={{ fontFamily: 'Poppins, sans-serif' }}>{yearsCoding || 2}+</p>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-0.5">Years coding</p>
-                  </div>
-                </div>
-
-                {/* Projects card */}
-                <div className="absolute -top-5 -right-6 bg-white dark:bg-gray-900 shadow-2xl shadow-black/10 dark:shadow-black/40 rounded-2xl px-5 py-3.5 flex items-center gap-3.5 border border-gray-100 dark:border-gray-800">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0">
-                    <i className="fas fa-laptop-code text-white" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white leading-none" style={{ fontFamily: 'Poppins, sans-serif' }}>{projectsCount || 10}+</p>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-0.5">Projects built</p>
-                  </div>
-                </div>
-
-                {/* Animated terminal — xl screens only */}
-                <div className="absolute top-12 left-0 -translate-x-[108%] w-56 bg-gray-950/95 backdrop-blur-sm rounded-xl shadow-2xl border border-white/10 overflow-hidden hidden xl:block z-20">
-                  <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-800/80 border-b border-white/5">
-                    <span className="w-2 h-2 rounded-full bg-red-500/80" aria-hidden="true" />
-                    <span className="w-2 h-2 rounded-full bg-yellow-400/80" aria-hidden="true" />
-                    <span className="w-2 h-2 rounded-full bg-green-500/80" aria-hidden="true" />
-                    <span className="ml-2 text-[10px] text-gray-500 font-mono">terminal</span>
-                  </div>
-                  <div className="p-3 font-mono text-[11px] min-h-[130px]">
-                    {terminalCount === 0 ? (
-                      <p className="text-gray-600">
-                        <span className="text-green-400">$</span>{' '}
-                        <span className="inline-block w-[7px] h-[13px] bg-green-400 align-middle animate-pulse" />
-                      </p>
-                    ) : (
-                      TERMINAL_LINES.slice(0, terminalCount).map((tokens, li) => (
-                        <p key={li} className="leading-[1.7]">
-                          {tokens.map((tok, ti) => (
-                            <span key={ti} className={tok.c}>{tok.t}</span>
-                          ))}
-                          {li === terminalCount - 1 && (
-                            <span className="inline-block w-[7px] h-[13px] bg-green-400 ml-0.5 align-middle animate-pulse" aria-hidden="true" />
-                          )}
-                        </p>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2" aria-hidden="true">
-          <div className="w-5 h-8 rounded-full border-2 border-gray-300 dark:border-gray-700 flex items-start justify-center pt-1.5">
-            <div className="w-1 h-2 bg-blue-500 rounded-full animate-scroll-dot" />
+        {/* ── Slide navigation — dots + arrows ── */}
+        <div className="absolute bottom-10 left-0 right-0 z-20 flex items-center justify-center gap-4">
+          <button
+            onClick={() => goToSlide((slide - 1 + SLIDES.length) % SLIDES.length)}
+            aria-label="Previous slide"
+            className="w-9 h-9 rounded-full border border-white/30 text-white hover:bg-white/20 flex items-center justify-center transition-colors backdrop-blur-sm"
+          >
+            <i className="fas fa-chevron-left text-xs" aria-hidden="true" />
+          </button>
+
+          <div className="flex items-center gap-2.5">
+            {SLIDES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goToSlide(i)}
+                aria-label={`Go to slide ${i + 1}`}
+                className={`rounded-full transition-all duration-500 ${
+                  i === slide
+                    ? 'w-8 h-2.5 bg-white'
+                    : 'w-2.5 h-2.5 bg-white/35 hover:bg-white/65'
+                }`}
+              />
+            ))}
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">Scroll</span>
+
+          <button
+            onClick={() => goToSlide((slide + 1) % SLIDES.length)}
+            aria-label="Next slide"
+            className="w-9 h-9 rounded-full border border-white/30 text-white hover:bg-white/20 flex items-center justify-center transition-colors backdrop-blur-sm"
+          >
+            <i className="fas fa-chevron-right text-xs" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* ── Progress bar ── */}
+        <div className="absolute bottom-0 inset-x-0 h-[3px] bg-white/10 z-20">
+          {!paused && (
+            <div
+              key={`pb-${slideKey}`}
+              className="h-full bg-white/60 rounded-full"
+              style={{ animation: `progressFill ${SLIDE_DURATION}ms linear forwards` }}
+            />
+          )}
+        </div>
+
+        {/* ── Slide counter badge ── */}
+        <div className="absolute top-24 right-6 lg:right-12 z-20 bg-black/40 border border-white/10 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full">
+          {slide + 1} / {SLIDES.length}
         </div>
       </section>
 
@@ -535,7 +602,6 @@ export default function Home() {
               {featuredProjects.map((project, i) => (
                 <Reveal key={project.id ?? i} delay={i * 100}>
                   <div className="group flex flex-col h-full bg-gray-50 dark:bg-gray-800/60 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700/50 hover:shadow-xl hover:border-blue-200 dark:hover:border-blue-800/50 transition-all duration-300">
-                    {/* Image / placeholder */}
                     <div className="relative h-44 overflow-hidden bg-gradient-to-br from-blue-500/10 to-violet-500/10 dark:from-blue-900/30 dark:to-violet-900/30">
                       {project.image ? (
                         <img
@@ -556,7 +622,6 @@ export default function Home() {
                       )}
                     </div>
 
-                    {/* Content */}
                     <div className="flex flex-col flex-1 p-5 gap-3">
                       <h3
                         className="font-bold text-gray-900 dark:text-white text-base"
@@ -584,22 +649,14 @@ export default function Home() {
                       )}
                       <div className="flex gap-4 pt-1">
                         {project.live_demo && (
-                          <a
-                            href={project.live_demo}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                          >
+                          <a href={project.live_demo} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
                             <i className="fas fa-external-link-alt text-[10px]" aria-hidden="true" /> Live Demo
                           </a>
                         )}
                         {project.github_link && (
-                          <a
-                            href={project.github_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                          >
+                          <a href={project.github_link} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
                             <i className="fab fa-github text-xs" aria-hidden="true" /> GitHub
                           </a>
                         )}
