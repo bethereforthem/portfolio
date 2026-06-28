@@ -67,6 +67,45 @@ function ProfileTab({ settings, onChange, onSave, saving }) {
         <textarea value={settings.welcome_text} onChange={onChange('welcome_text')} rows={3} placeholder="Your intro/welcome message…" className={textareaClass} />
       </div>
 
+      <div className="border-t pt-5">
+        <p className="text-sm font-semibold text-gray-700 mb-1">
+          <i className="fas fa-chart-bar text-blue-500 mr-1.5"></i>Stats Numbers
+        </p>
+        <p className="text-xs text-gray-400 mb-3">
+          Projects and Technologies are auto-counted from your admin data. Set the other two below.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <i className="fas fa-laptop-code text-orange-500 mr-1.5"></i>Years Coding
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="50"
+              value={settings.years_coding}
+              onChange={onChange('years_coding')}
+              placeholder="e.g. 3"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <i className="fas fa-certificate text-yellow-500 mr-1.5"></i>Certificates
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={settings.certificates}
+              onChange={onChange('certificates')}
+              placeholder="e.g. 4"
+              className={inputClass}
+            />
+          </div>
+        </div>
+      </div>
+
       <SaveButton saving={saving} />
     </form>
   )
@@ -361,7 +400,7 @@ const DEFAULT_SETTINGS = {
   full_name: '', bio: '', profile_image: '', university: '', welcome_text: '',
   email: '', phone: '', whatsapp_link: '', location: '', about_location: '',
   contact_address: '', working_hours: '', linkedin_url: '', linkedin_label: '',
-  cv_url: '', resume_url: '',
+  cv_url: '', resume_url: '', years_coding: '', certificates: '',
 }
 
 export default function AdminSettings() {
